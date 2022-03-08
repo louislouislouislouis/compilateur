@@ -6,3 +6,5 @@ compiler/runmake_ubuntu.sh
 compiler/build
 compiler/ifcc
 compiler/generated
+.vscode
+tests/ifcc-test-output
