@@ -1,0 +1,50 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "run make",
+			"command": "runmake_ubuntu.sh",
+			"args": [],
+			"options": {
+				"cwd": "${workspaceFolder}/compiler"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"detail": "compiler: /usr/bin/cpp"
+		},
+		{
+			"type": "shell",
+			"label": "gui",
+			"command": "gui_ubuntu.sh",
+			"options": {
+				"cwd": "${workspaceFolder}/compiler"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"detail": "compiler: /usr/bin/cpp"
+		},
+		{
+			"type": "shell",
+			"label": "tests",
+			"command": "ifcc-test.py",
+			"args": [
+				"testfiles"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/tests"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"dependsOn": [
+				"run make"
+			],
+		},
+	]
+}

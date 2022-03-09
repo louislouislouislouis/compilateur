@@ -2,9 +2,7 @@ antlr.tmp/
 antlr
 install-antlr.sh
 compiler/._runmake_fedora.sh
-compiler/runmake_ubuntu.sh
 compiler/build
 compiler/ifcc
 compiler/generated
-.vscode
 tests/ifcc-test-output
