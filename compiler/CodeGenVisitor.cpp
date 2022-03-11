@@ -5,18 +5,29 @@
 #else
 #define MAIN "main"
 #endif
-
+// visite de l'axiome donc:
+//   On cale les prerequis du programme minimal et au milieu on visite les expressions entre
+/*
+int main(){
+    ...
+    return 0;
+}
+.globl  main
+main:
+    push %rbp
+    movq %rsp, %rbp
+    ...
+    popq %rbp
+    ret
+ */
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
-    // int retval = stoi(ctx->CONST()->getText());
-
     std::cout << ".globl    " << MAIN << "\n " << MAIN << ": \n 	pushq %rbp\n 	movq %rsp, %rbp\n\n";
     visitChildren(ctx);
     std::cout << "\n 	popq %rbp\n 	ret\n";
     symbolTable.checkUse();
     return 0;
 }
-
 antlrcpp::Any CodeGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
 {
     std::string id = ctx->ID()->getText();
@@ -38,7 +49,7 @@ antlrcpp::Any CodeGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
 
     return 0;
 }
-
+//visiteur de l'assignation
 antlrcpp::Any CodeGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
 {
     std::string id = ctx->ID()->getText();
@@ -54,7 +65,7 @@ antlrcpp::Any CodeGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
 
     return 0;
 }
-
+//visiteur du return
 antlrcpp::Any CodeGenVisitor::visitRet(ifccParser::RetContext *ctx)
 {
     if (ctx->rval()->CONST() != nullptr)
