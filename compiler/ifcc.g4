@@ -1,26 +1,26 @@
 grammar ifcc;
 
-axiom : prog ;
+axiom: prog;
 
-prog : 'int' 'main' '(' ')' '{' expr+ '}' ;
+prog: 'int' 'main' '(' ')' '{' expr+ '}';
 
-expr: ret | decl | assign ;
+expr: ret | decl | assign;
 
-ret : 'return' rval ';';
+ret: 'return' rval ';';
 
-decl: type sdecl (',' sdecl)* ';' ;
-sdecl: ID ('=' rval)? ;
+decl: type sdecl (',' sdecl)* ';';
+sdecl: ID ('=' rval)?;
 
-assign: sassign (',' sassign)* ';' ;
-sassign: ID '=' rval  ;
-rval: CONST | ID ;
+assign: sassign (',' sassign)* ';';
+sassign: ID '=' rval;
+rval: CONST | ID;
 
-type: 'int' ;
+type: 'int';
 
-RETURN : 'return' ;
-ID : [a-zA-Z_][a-zA-Z0-9_]* ;
-CONST : '-'? [0-9]+ ;
-COMMENT : '/*' .*? '*/' -> skip ;
-COMMENT_LINE : '//' .*? '\n' -> skip ;
-DIRECTIVE : '#' .*? '\n' -> skip ;
-WS    : [ \t\r\n] -> channel(HIDDEN);
+RETURN: 'return';
+ID: [a-zA-Z_][a-zA-Z0-9_]*;
+CONST: '-'? [0-9]+;
+COMMENT: '/*' .*? '*/' -> skip;
+COMMENT_LINE: '//' .*? '\n' -> skip;
+DIRECTIVE: '#' .*? '\n' -> skip;
+WS: [ \t\r\n] -> channel(HIDDEN);
