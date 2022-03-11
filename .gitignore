@@ -1,3 +1,4 @@
+.gitignore
 antlr.tmp/
 antlr
 install-antlr.sh
@@ -6,3 +7,9 @@ compiler/build
 compiler/ifcc
 compiler/generated
 tests/ifcc-test-output
+compiler/.antlr/ifcc.interp
+compiler/.antlr/ifcc.tokens
+compiler/.antlr/ifccLexer.interp
+compiler/.antlr/ifccLexer.java
+compiler/.antlr/ifccLexer.tokens
+compiler/.antlr/ifccParser.java
