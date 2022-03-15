@@ -56,6 +56,7 @@ antlrcpp::Any CodeGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
 
     if (ctx->rval()->CONST() != nullptr)
     {
+
         std::cout << " 	movl	$" << stoi(ctx->rval()->CONST()->getText()) << ", -" << symbolTable.getOffset(id) << "(%rbp)\n";
     }
     else
@@ -82,6 +83,6 @@ antlrcpp::Any CodeGenVisitor::visitRet(ifccParser::RetContext *ctx)
 
 void CodeGenVisitor::assign(std::string ids, std::string idd)
 {
-    std::cout << " 	movl	-" << symbolTable.getOffset(ids) << "(%rbp), %r8d\n";
-    std::cout << " 	movl	%r8d, -" << symbolTable.getOffset(idd) << "(%rbp)\n";
+    std::cout << " 	movl	-" << symbolTable.getOffset(ids) << "(%rbp), %eax\n";
+    std::cout << " 	movl	%eax, -" << symbolTable.getOffset(idd) << "(%rbp)\n";
 }
