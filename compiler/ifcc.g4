@@ -13,6 +13,7 @@ sdecl: ID ('=' rval)?;
 
 assign: sassign (',' sassign)* ';';
 sassign: ID '=' rval;
+
 rval: CONST | ID;
 
 type: 'int';

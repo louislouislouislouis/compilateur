@@ -24,7 +24,7 @@ void SymbolTable::add(std::string id, size_t size, pos pos)
     {
         *err << "Error: " << id << " already declared" << std::endl;
         *err << "\t at line " << pos.line << ":" << pos.column << std::endl;
-        *err << "First declared at" << posMap->at(id).line << ":" << posMap->at(id).line << std::endl;
+        *err << "First declared at " << posMap->at(id).line << ":" << posMap->at(id).line << std::endl;
         exit(1);
     }
 
