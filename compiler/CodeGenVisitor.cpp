@@ -235,17 +235,19 @@ antlrcpp::Any CodeGenVisitor::visitPar(ifccParser::ParContext *ctx)
     std::cerr << element << std::endl;
     if (!symbolTable.isContained(element))
         symbolTable.add(element, 4, {0, 0}, true);
+    assign(ctx->arithmetic()->getText(),element);
     return 0;
 }
 // parser de l'assembly de l'assignation
 antlrcpp::Any CodeGenVisitor::visitMoinsunaire(ifccParser::MoinsunaireContext *ctx)
 {
     visitChildren(ctx);
-    int offset = symbolTable.getOffset(ctx->arithmetic()->getText());
-    if (!symbolTable.isContained(ctx->getText()))
-        symbolTable.add(ctx->getText(), 4, {0, 0}, true);
+    std::string expression = ctx->getText();
+    if (!symbolTable.isContained(expression))
+        symbolTable.add(expression, 4, {0, 0}, true);
+    int offset = symbolTable.getOffset(expression);
+    assign(ctx->arithmetic()->getText(),expression);
     std::cout << " 	negl -" << offset << "(%rbp)\n";
-    assign(ctx->arithmetic()->getText(), ctx->getText());
 
     return 0;
 }

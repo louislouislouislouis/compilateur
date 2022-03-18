@@ -26,6 +26,10 @@ constructor creates new structs
 */
 SymbolTable::~SymbolTable()
 {
+    for (auto v : *offsetMap)
+    {
+        *err << v.first << "->" << v.second << std::endl;
+    }
     delete offsetMap;
     delete posMap;
     delete usedMap;
@@ -84,7 +88,7 @@ int SymbolTable::getOffset(std::string id)
 }
 
 /*
-checks if the variable that should be accessed is declared, 
+checks if the variable that should be accessed is declared,
 stops the program if tha variable is not declared
 */
 void SymbolTable::checkVar(std::string id)
@@ -97,14 +101,14 @@ void SymbolTable::checkVar(std::string id)
 }
 
 /*
-checks if any variable has never been used 
+checks if any variable has never been used
 returs a warning if not
 */
 void SymbolTable::checkUse()
 {
     for (auto v : *usedMap)
     {
-        if (!v.second) //second argument in <string,bool> is false, so not used
+        if (!v.second) // second argument in <string,bool> is false, so not used
         {
             *err << "Warning: variable " << v.first << " is never used" << std::endl;
             *err << "\t Declared at line " << posMap->at(v.first).line << ":" << posMap->at(v.first).column << std::endl;
