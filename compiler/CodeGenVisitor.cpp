@@ -27,7 +27,7 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
     std::cout << ".globl    " << MAIN << "\n " << MAIN << ": \n 	pushq %rbp\n 	movq %rsp, %rbp\n\n";
     visitChildren(ctx); // not safe for use in visitors that modify the tree structure
     std::cout << "\n 	popq %rbp\n 	ret\n";
-    symbolTable.checkUse(); //warings for all unused variables
+    symbolTable.checkUse(); // warings for all unused variables
     return 0;
 }
 
@@ -42,12 +42,12 @@ remark when no variable is assigned to the varaible, the memoryspace can hold AN
 */
 antlrcpp::Any CodeGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
 {
-    std::string varname = ctx->ID()->getText(); //get the name of the variable as string
+    std::string varname = ctx->ID()->getText(); // get the name of the variable as string
     symbolTable.add(varname,
-                    4,                                                                                     //in the futer we should consider the type of the variable, 4 is not always the right size
-                    {ctx->ID()->getSymbol()->getLine(), ctx->ID()->getSymbol()->getCharPositionInLine()}); //save the position in the program
+                    4,                                                                                     // in the futer we should consider the type of the variable, 4 is not always the right size
+                    {ctx->ID()->getSymbol()->getLine(), ctx->ID()->getSymbol()->getCharPositionInLine()}); // save the position in the program
 
-    if (ctx->rval() != nullptr) //we have an expression which assigns int var = CONST|ID;
+    if (ctx->rval() != nullptr) // we have an expression which assigns int var = CONST|ID;
     {
         // if (ctx->rval()->CONST() != nullptr)
         // {
@@ -61,8 +61,8 @@ antlrcpp::Any CodeGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
         {
             std::cerr << "decl:" << std::endl;
             std::cout << std::endl;
-            //int varname = var_1;
-            //assign(var_1, varname);
+            // int varname = var_1;
+            // assign(var_1, varname);
             assign(ctx->rval()->ID()->getText(), varname);
         }
         else if (ctx->rval()->arithmetic() != nullptr)
@@ -86,8 +86,8 @@ antlrcpp::Any CodeGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
 }
 // visiteur de l'assignation
 /*
-evaluates an expression like 
-var_1 = -9902; 
+evaluates an expression like
+var_1 = -9902;
 var_1 = var_2;
 */
 antlrcpp::Any CodeGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
@@ -97,14 +97,14 @@ antlrcpp::Any CodeGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
     // if (ctx->rval()->CONST() != nullptr)
     // {
     //     std::cout << std::endl;
-    //movl $"-9902", -"offset_of_variable(%rbp)"
+    // movl $"-9902", -"offset_of_variable(%rbp)"
     //     std::cout << " 	movl	$" << stoi(ctx->rval()->CONST()->getText()) << ", -" << symbolTable.getOffset(id) << "(%rbp)\n";
     // }
     // else
     if (ctx->rval()->ID() != nullptr)
     {
 
-        //assign(var_1, valueof(var_2))
+        // assign(var_1, valueof(var_2))
         //!!!possible bug because value not id of first argument is passed!!!
         assign(ctx->rval()->ID()->getText(), id);
     }
@@ -136,7 +136,7 @@ antlrcpp::Any CodeGenVisitor::visitRet(ifccParser::RetContext *ctx)
     std::cerr << "return:" << std::endl;
     // if (ctx->rval()->CONST() != nullptr)
     // {
-    //load the value of the constant expression into the %eax register which is used to return values
+    // load the value of the constant expression into the %eax register which is used to return values
     //     std::cout << std::endl;
     //     std::cout << " 	movl	$" << ctx->rval()->CONST()->getText() << ", %eax\n";
     // }
@@ -148,8 +148,8 @@ antlrcpp::Any CodeGenVisitor::visitRet(ifccParser::RetContext *ctx)
     }
     else if (ctx->rval()->arithmetic() != nullptr)
     {
-        //get the position of the variable on the stack, and load the bytes from
-        //this register into the %eax register
+        // get the position of the variable on the stack, and load the bytes from
+        // this register into the %eax register
         visitChildren(ctx);
         int offsetRes = symbolTable.getOffset(ctx->rval()->arithmetic()->getText());
         std::cout << std::endl;
@@ -231,6 +231,10 @@ antlrcpp::Any CodeGenVisitor::visitMuldiv(ifccParser::MuldivContext *ctx)
 antlrcpp::Any CodeGenVisitor::visitPar(ifccParser::ParContext *ctx)
 {
     visitChildren(ctx);
+    std::string element = ctx->getText();
+    std::cerr << element << std::endl;
+    if (!symbolTable.isContained(element))
+        symbolTable.add(element, 4, {0, 0}, true);
     return 0;
 }
 // parser de l'assembly de l'assignation
@@ -249,8 +253,8 @@ antlrcpp::Any CodeGenVisitor::visitMoinsunaire(ifccParser::MoinsunaireContext *c
 void CodeGenVisitor::assign(std::string ids, std::string idd)
 {
 
-    //movl -offset(%rbp),%eax move value on this position in the stack into %eax
+    // movl -offset(%rbp),%eax move value on this position in the stack into %eax
     std::cout << " 	movl	-" << symbolTable.getOffset(ids) << "(%rbp), %eax\n";
-    //move the new value in %eax into an other register
+    // move the new value in %eax into an other register
     std::cout << " 	movl	%eax, -" << symbolTable.getOffset(idd) << "(%rbp)\n";
 }
