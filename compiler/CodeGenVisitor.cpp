@@ -173,16 +173,18 @@ antlrcpp::Any CodeGenVisitor::visitConst(ifccParser::ConstContext *ctx)
     return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitBitwise_and_or_xor(ifccParser::AddminusContext *ctx)
+antlrcpp::Any CodeGenVisitor::visitBitwise(ifccParser::BitwiseContext *ctx)
 {
-        visitChildren(ctx);
         std::cout << " cucu in der xor schleife\n";
+        visitChildren(ctx);
         std::string op = ctx->op->getText();
         int offsetVar_1 = symbolTable.getOffset(ctx->arithmetic(0)->getText());
+        std::cout << "var_1 "<<ctx->arithmetic(0)->getText()<<"\n";
+        std::cout << "var_2 "<<ctx->arithmetic(1)->getText()<<"\n";
         int offsetVar_2 = symbolTable.getOffset(ctx->arithmetic(1)->getText());
         if(op == "&"){
-            std::cout << " 	movl	-" << offsetVar_1 << "(%rbp), (%eax)\n";
-            std::cout << " 	addl	-" << offsetVar_2 << "(%rbp), (%eax)\n";
+            std::cout << " 	movl	-" <<offsetVar_1<< "(%rbp), (%eax)\n";
+            std::cout << " 	addl	-" <<offsetVar_2<< "(%rbp), (%eax)\n";
         }
         else if(op == "|"){
 

@@ -18,7 +18,7 @@ public:
 	virtual antlrcpp::Any visitSassign(ifccParser::SassignContext *ctx) override;
 	virtual antlrcpp::Any visitRet(ifccParser::RetContext *ctx) override;
 	virtual antlrcpp::Any visitConst(ifccParser::ConstContext *ctx) override;
-	virtual antlrcpp::Any visitBitwise_and_or_xor(ifccParser::AddminusContext *ctx);
+	virtual antlrcpp::Any visitBitwise(ifccParser::BitwiseContext *ctx) override;
 	virtual antlrcpp::Any visitAddminus(ifccParser::AddminusContext *ctx) override;
 	virtual antlrcpp::Any visitMuldiv(ifccParser::MuldivContext *ctx) override;
 	virtual antlrcpp::Any visitPar(ifccParser::ParContext *ctx) override;
