@@ -1,5 +1,5 @@
 int main()
 {
-    int x = 8 % 3;
-    return x;
+	int x = 3 + 4 + 5, y = (3 + 4) + 5;
+	return x - y;
 }
