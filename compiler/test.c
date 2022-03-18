@@ -1,5 +1,5 @@
 int main()
 {
-
-	int z = -(9 - 1);
+    int x = 8 % 3;
+    return x;
 }

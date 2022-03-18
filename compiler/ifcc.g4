@@ -20,7 +20,7 @@ type: 'int';
 inlineArithmetic: arithmetic ';';
 arithmetic:
 	'-' arithmetic								# moinsunaire
-	| arithmetic op = ('*' | '/') arithmetic	# muldiv
+	| arithmetic op = ('*' | '/' | '%') arithmetic	# muldiv
 	| arithmetic op = ('+' | '-') arithmetic	# addminus
 	| '(' arithmetic ')'						# par
 	| CONST										# const

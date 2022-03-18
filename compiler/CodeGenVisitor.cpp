@@ -218,13 +218,28 @@ antlrcpp::Any CodeGenVisitor::visitMuldiv(ifccParser::MuldivContext *ctx)
     std::string keyWord;
     if (op == "*")
         keyWord = "imull";
+    else if (op == "/")
+        keyWord = "cltd";
     else
-        keyWord = "imull";
+        keyWord = "cltd";
+        
     std::cerr << "MulDiv:" << std::endl;
     std::cout << std::endl;
     std::cout << " 	movl -" << offsetGauche << "(%rbp), %eax\n";
-    std::cout << " 	" << keyWord << " -" << offsetDroite << "(%rbp), %eax\n";
-    std::cout << " 	movl %eax, -" << offsetGlobal << "(%rbp)\n";
+    if (op=="*"){
+        std::cout << " 	" << keyWord << " -" << offsetDroite << "(%rbp), %eax\n";
+        std::cout << " 	movl %eax, -" << offsetGlobal << "(%rbp)\n";
+    }else{
+        std::cout << " 	" << keyWord <<"\n";
+        std::cout << "  idivl	" << " -" << offsetDroite << "(%rbp)\n";
+        if (op == "/"){
+            std::cout << " 	movl %eax, -" << offsetGlobal << "(%rbp)\n";
+        }else{
+            std::cout << " 	movl %edx, -" << offsetGlobal << "(%rbp)\n";
+        }
+       
+    }
+    
 
     return 0;
 }
