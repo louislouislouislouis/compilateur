@@ -49,14 +49,6 @@ antlrcpp::Any CodeGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
 
     if (ctx->rval() != nullptr) //we have an expression which assigns int var = CONST|ID;
     {
-        // if (ctx->rval()->CONST() != nullptr)
-        // {
-        //     std::cerr << "decl:" << std::endl;
-        //     // std::cout << "COUCOU\n";
-        //     std::cout << std::endl;
-        //     std::cout << " 	movl	$" << stoi(ctx->rval()->CONST()->getText()) << ", -" << symbolTable.getOffset(id) << "(%rbp)\n";
-        // }
-        // else
         if (ctx->rval()->ID() != nullptr)
         {
             std::cerr << "decl:" << std::endl;
@@ -180,6 +172,27 @@ antlrcpp::Any CodeGenVisitor::visitConst(ifccParser::ConstContext *ctx)
     std::cout << " 	movl	$" << constante << ", -" << symbolTable.getOffset(constante) << "(%rbp)\n";
     return 0;
 }
+
+antlrcpp::Any CodeGenVisitor::visitBitwise_and_or_xor(ifccParser::AddminusContext *ctx)
+{
+        visitChildren(ctx);
+        std::cout << " cucu in der xor schleife\n";
+        std::string op = ctx->op->getText();
+        int offsetVar_1 = symbolTable.getOffset(ctx->arithmetic(0)->getText());
+        int offsetVar_2 = symbolTable.getOffset(ctx->arithmetic(1)->getText());
+        if(op == "&"){
+            std::cout << " 	movl	-" << offsetVar_1 << "(%rbp), (%eax)\n";
+            std::cout << " 	addl	-" << offsetVar_2 << "(%rbp), (%eax)\n";
+        }
+        else if(op == "|"){
+
+        }
+        else if(op == "^"){
+
+        }
+        return 0;
+}
+
 antlrcpp::Any CodeGenVisitor::visitAddminus(ifccParser::AddminusContext *ctx)
 {
 

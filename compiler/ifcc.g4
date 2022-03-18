@@ -22,6 +22,7 @@ arithmetic:
 	'-' arithmetic								# moinsunaire
 	| arithmetic op = ('*' | '/') arithmetic	# muldiv
 	| arithmetic op = ('+' | '-') arithmetic	# addminus
+	| arithmetic op = ('&' | '^' | '|' ) arithmetic #bitwise_and_or_xor
 	| '(' arithmetic ')'						# par
 	| CONST										# const
 	| ID										# id;
