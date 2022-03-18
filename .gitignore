@@ -8,3 +8,4 @@ compiler/ifcc
 compiler/generated
 tests/ifcc-test-output
 compiler/.antlr
+.vscode/

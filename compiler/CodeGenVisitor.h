@@ -22,9 +22,13 @@ public:
 	virtual antlrcpp::Any visitMuldiv(ifccParser::MuldivContext *ctx) override;
 	virtual antlrcpp::Any visitPar(ifccParser::ParContext *ctx) override;
 	virtual antlrcpp::Any visitInlineArithmetic(ifccParser::InlineArithmeticContext *ctx) override;
-	virtual antlrcpp::Any visitMoinsunaire(ifccParser::MoinsunaireContext *ctx) override;
+	virtual antlrcpp::Any visitUnary(ifccParser::UnaryContext *ctx) override;
+	virtual antlrcpp::Any visitComprel(ifccParser::ComprelContext *ctx) override;
+	virtual antlrcpp::Any visitCompeq(ifccParser::CompeqContext *ctx) override;
+	virtual antlrcpp::Any visitOplog(ifccParser::OplogContext *ctx) override;
 
 	void assign(std::string ids, std::string idd);
 	void checkVar(antlr4::tree::TerminalNode *id);
 	void checkVarUse();
+	void getComp(std::string element, ifccParser::ArithmeticContext *ctxl, ifccParser::ArithmeticContext *ctxr, std::string op);
 };

@@ -93,9 +93,14 @@ stops the program if tha variable is not declared
 */
 void SymbolTable::checkVar(std::string id)
 {
+
     if (offsetMap->count(id) == 0)
     {
         *err << "Error: variable " << id << " is not declared" << std::endl;
+        for (auto it : *offsetMap)
+        {
+            *err << it.first << ": " << it.second << std::endl;
+        }
         exit(1);
     }
 }

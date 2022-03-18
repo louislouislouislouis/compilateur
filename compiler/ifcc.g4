@@ -4,27 +4,30 @@ axiom: prog;
 
 prog: 'int' 'main' '(' ')' '{' expr+ '}';
 
-expr: ret | decl | assign | inlineArithmetic;
+expr: (ret | decl | assign | inlineArithmetic)? ';';
 
-ret: 'return' rval ';';
+ret: 'return' rval;
 
-decl: type sdecl (',' sdecl)* ';';
+decl: type sdecl (',' sdecl)*;
 sdecl: ID ('=' rval)?;
 
-assign: sassign (',' sassign)* ';';
+assign: sassign (',' sassign)*;
 sassign: ID '=' rval;
 rval: ID | arithmetic;
 
 type: 'int';
 
-inlineArithmetic: arithmetic ';';
+inlineArithmetic: arithmetic;
 arithmetic:
-	'-' arithmetic								# moinsunaire
-	| arithmetic op = ('*' | '/' | '%') arithmetic	# muldiv
-	| arithmetic op = ('+' | '-') arithmetic	# addminus
-	| '(' arithmetic ')'						# par
-	| CONST										# const
-	| ID										# id;
+	op = ('-' | '+' | '!') arithmetic						# unary
+	| arithmetic op = ('*' | '/' | '%') arithmetic			# muldiv
+	| arithmetic op = ('+' | '-') arithmetic				# addminus
+	| arithmetic op = ('<=' | '>=' | '<' | '>') arithmetic	# comprel
+	| arithmetic op = ('==' | '!=') arithmetic				# compeq
+	| arithmetic op = ('&&' | '||') arithmetic				# oplog
+	| '(' arithmetic ')'									# par
+	| CONST													# const
+	| ID													# id;
 
 RETURN: 'return';
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
