@@ -1,6 +1,5 @@
 int main()
 {
-	int x = 8;
-	int y = x;
-	return x;
+
+	int z = -(9 - 1);
 }
