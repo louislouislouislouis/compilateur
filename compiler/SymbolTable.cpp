@@ -35,7 +35,7 @@ stores the name, size of the new variable and saves it's offset on the stack
 */
 void SymbolTable::add(std::string id, size_t size, pos pos)
 {
-    offset += size;  // strange because now the offset of a variable points to the end of the variable...?
+    offset += size; // strange because now the offset of a variable points to the end of the variable...?
     auto p = offsetMap->emplace(id, offset);
     if (!p.second)
     {
@@ -52,6 +52,22 @@ void SymbolTable::add(std::string id, size_t size, pos pos)
 /*
 sets the variable to used which means that a value has been assiged to it
 */
+void SymbolTable::add(std::string id, size_t size, pos pos, bool state)
+{
+    offset += size;
+    auto p = offsetMap->emplace(id, offset);
+    if (!p.second)
+    {
+        *err << "Error: " << id << " already declared" << std::endl;
+        *err << "\t at line " << pos.line << ":" << pos.column << std::endl;
+        *err << "First declared at" << posMap->at(id).line << ":" << posMap->at(id).line << std::endl;
+        exit(1);
+    }
+
+    posMap->emplace(id, pos);
+    usedMap->emplace(id, state);
+}
+
 void SymbolTable::used(std::string id)
 {
     usedMap->at(id) = true;
@@ -100,4 +116,9 @@ pos SymbolTable::getPos(std::string id)
 {
     checkVar(id);
     return posMap->at(id);
+}
+bool SymbolTable::isContained(std::string id)
+{
+    std::map<std::string, size_t>::iterator it = offsetMap->find(id);
+    return it != offsetMap->end();
 }
