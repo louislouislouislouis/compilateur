@@ -13,7 +13,7 @@ sdecl: ID ('=' rval)?;
 
 assign: sassign (',' sassign)*;
 sassign: ID '=' rval;
-rval: ID | arithmetic;
+rval: arithmetic;
 
 type: 'int';
 
@@ -30,6 +30,7 @@ arithmetic:
 	| CONST													# const
 	| ID													# id;
 
+OPTOK: '--' | '++';
 RETURN: 'return';
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
 CONST: [0-9]+;

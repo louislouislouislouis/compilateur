@@ -15,11 +15,13 @@
 #
 
 import argparse
+from copyreg import pickle
 import glob
 import os
 import shutil
 import sys
 import subprocess
+import pickle
 
 
 def command(string, logfile=None):
@@ -65,6 +67,7 @@ argparser.add_argument('-v', '--verbose', action="count", default=0,
                        help='Increase verbosity level. You can use this option multiple times.')
 argparser.add_argument('-w', '--wrapper', metavar='PATH',
                        help='Invoke your compiler through the shell script at PATH. (default: `ifcc-wrapper.sh`)')
+argparser.add_argument('-f', '--failed', action="store_true",help="Run only previously failed tests")
 
 args = argparser.parse_args()
 
@@ -98,6 +101,12 @@ for path in args.input:
     else:
         print("error: cannot read input path `"+path+"'")
         sys.exit(1)
+fFile:str = os.path.dirname(os.path.realpath(__file__))+"/test-failed"
+to_include = []
+if args.failed:
+    if os.path.isfile(fFile):
+        to_include = pickle.load(open(fFile, "rb"))
+
 
 # debug: after treewalk
 if args.debug:
@@ -145,11 +154,13 @@ for inputfilename in inputfilenames:
     if 'ifcc-test-output' in os.path.realpath(inputfilename):
         print('error: input filename is within output directory: '+inputfilename)
         exit(1)
-
+    
     # each test-case gets copied and processed in its own subdirectory:
     # ../somedir/subdir/file.c becomes ./ifcc-test-output/somedir-subdir-file/input.c
     subdir = 'ifcc-test-output/' + \
         inputfilename.strip("./")[:-2].replace('/', '-')
+    if args.failed and subdir not in to_include:
+        continue
     os.mkdir(subdir)
     shutil.copyfile(inputfilename, subdir+'/input.c')
     jobs.append(subdir)
@@ -170,14 +181,14 @@ if args.debug:
 
 ######################################################################################
 # TEST step: actually compile all test-cases with both compilers
-
+failed = []
 for jobname in jobs:
     os.chdir(orig_cwd)
 
     os.chdir(jobname)
 
     # Reference compiler = GCC
-    gccstatus = command("gcc -S -O0 -o asm-gcc.s input.c", "gcc-compile.txt")
+    gccstatus = command("gcc -S -O0 -Wall -o asm-gcc.s input.c", "gcc-compile.txt")
     if gccstatus == 0:
         # test-case is a valid program. we should run it
         gccstatus = command("gcc -o exe-gcc asm-gcc.s", "gcc-link.txt")
@@ -198,11 +209,13 @@ for jobname in jobs:
         # ifcc wrongly accepts invalid program -> error
         print('TEST-CASE: '+jobname)
         print("TEST FAIL (your compiler accepts an invalid program)")
+        failed.append(jobname)
         continue
     elif gccstatus == 0 and ifccstatus != 0:
         # ifcc wrongly rejects valid program -> error
         print('TEST-CASE: '+jobname)
         print("TEST FAIL (your compiler rejects a valid program)")
+        failed.append(jobname)
         if args.verbose:
             dumpfile("ifcc-compile.txt")
         continue
@@ -212,6 +225,7 @@ for jobname in jobs:
         if ldstatus:
             print('TEST-CASE: '+jobname)
             print("TEST FAIL (your compiler produces incorrect assembly)")
+            failed.append(jobname)
             if args.verbose:
                 dumpfile("ifcc-link.txt")
             continue
@@ -223,6 +237,7 @@ for jobname in jobs:
     if open("gcc-execute.txt").read() != open("ifcc-execute.txt").read():
         print('TEST-CASE: '+jobname)
         print("TEST FAIL (different results at execution)")
+        failed.append(jobname)
         if args.verbose:
             print("GCC:")
             dumpfile("gcc-execute.txt")
@@ -231,3 +246,4 @@ for jobname in jobs:
         continue
 
     # last but not least
+pickle.dump(failed, open(fFile, "wb"))

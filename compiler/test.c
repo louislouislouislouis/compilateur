@@ -1,5 +1,5 @@
 int main()
 {
-	int x = 3 + 4 + 5, y = (3 + 4) + 5;
-	return x - y;
+	int x = 0, y = 1, z = 1;
+	return x && y || z;
 }

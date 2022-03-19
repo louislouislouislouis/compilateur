@@ -1,57 +1,86 @@
-#include "map"
-#include "iostream"
-//Structure pour caracteriser la position d'un symbole:
-//  -> Pour dire erreur a ligne 6:5 voila voila
+#pragma once
+#include <map>
+#include <iostream>
+#include <vector>
+
 typedef struct
 {
     size_t line;
     size_t column;
 } pos;
-//La table des symboles
-/*
-id=text of the expression we analyse
-id   offsetMap posMap usedMap
-a -> 0         (5,6)  false
-a+b -> 4         (6,12) true
-...
-*/
+
 class SymbolTable
 {
-private:
-    //offset en memoire pour chaque variable
-    std::map<std::string, size_t> *offsetMap;
-    std::map<std::string, pos> *posMap;
-    std::map<std::string, bool> *usedMap;
+public:
+    SymbolTable(std::ostream &_out, std::ostream &_err);
+    ~SymbolTable();
 
+    /*
+     * Add a variable to the symbol table
+     * @param id: the name of the variable
+     * @param size: the size of the variable in bytes
+     * @param pos: the position of the variable in the source code
+     * @return the offset of the variable
+     *
+     */
+    size_t add(std::string id, size_t size, pos pos);
+
+    /*
+     * Add a temporary variable to the symbol table
+     * @param id: the name of the variable
+     * @param size: the size of the variable in bytes
+     * @return the offset of the variable
+     */
+    size_t addTemp(std::string id, size_t size);
+
+    // Clear the temporary variables
+    void clearTemp();
+
+    /*
+     * Get the offset of the variable
+     * @param id: the name of the variable
+     * @param init: true to diable initialization check (used when assigning a value to a variable)
+     */
+    size_t getOffset(std::string id, bool init = false);
+
+    // Get the position of the variable in the source code
+    pos getPos(std::string id);
+
+    // Mark the variable as used
+    void used(std::string id);
+
+    // Check for unused variables
+    void checkUse();
+
+private:
+    // Offset of the declared variables
+    std::map<std::string, size_t> *offsetMap;
+
+    // Position of the declared variables in the source code
+    std::map<std::string, pos> *posMap;
+
+    // Used to determine if a variable is initialized and if it is used
+    // 0: not initialized
+    // 1: initialized
+    // 2: used
+    std::map<std::string, int> *usedMap;
+
+    // Offset of the last declared variable
     size_t offset;
 
-    std::ostream *out;
-    std::ostream *err;
-    //pour voir si une variable est declarée
+    // Offset of the last declared variable before a temp variable
+    size_t offsetBeforeTemp;
+
+    // List of temp variables' names
+    std::vector<std::string> *tempIds;
+
+    // Streams
+    std::ostream &out;
+    std::ostream &err;
+
+    // Check if the variable is declared
     void checkVar(std::string id);
 
-public:
-    //Constructeur:
-    // ->init struct data
-    // ->offset 0
-    // ->Definition flux erreur et sortie
-    SymbolTable(std::ostream *_out, std::ostream *_err);
-    //Destructeur classique
-    ~SymbolTable();
-    
-    //ajouter un symbole:
-    // ->Fonction de la taille, id, et de la position dans le code
-    // ->newOffset=offset+size, used a false, pos mis dans map
-    void add(std::string id, size_t size, pos pos);
-    void add(std::string id, size_t size, pos pos,bool state);
-    //getter pour l'offset
-    int getOffset(std::string id);
-    //getter pour la position
-    pos getPos(std::string id);
-    //getter pour used
-    void used(std::string id);
-    //savoir quelles variables sont utilisées et on agit en fontion avec des warnings
-    // ->Attention unused!!!
-    void checkUse();
-    bool isContained(std::string id);
+    // Check if the variable is initialized
+    void checkInit(std::string id);
 };
