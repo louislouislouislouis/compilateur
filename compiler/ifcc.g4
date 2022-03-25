@@ -25,6 +25,7 @@ arithmetic:
 	| arithmetic op = ('<=' | '>=' | '<' | '>') arithmetic	# comprel
 	| arithmetic op = ('==' | '!=') arithmetic				# compeq
 	| arithmetic op = ('&&' | '||') arithmetic				# oplog
+	| arithmetic op = ('&'  | '^'  | '|' ) arithmetic 		# bitwise
 	| '(' arithmetic ')'									# par
 	| CONST													# const
 	| ID													# id;
