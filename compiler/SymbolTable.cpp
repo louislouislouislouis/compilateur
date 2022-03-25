@@ -1,133 +1,152 @@
 #include "SymbolTable.h"
 
-SymbolTable::SymbolTable(std::ostream *_out, std::ostream *_err) : out(_out), err(_err)
+SymbolTable::SymbolTable(std::ostream &_out, std::ostream &_err) : out(_out), err(_err)
 {
-    /*
-    stores for a variable given by the string the position of the variable on the stack
-    by using the offest parameter.
-    eg: int var --> offsetMap->emplace(var, 4)
-    eg:char foo --> offsetMap->emplace(foo, 1)
-    */
+    // Initialize data structures
     offsetMap = new std::map<std::string, size_t>();
-    /*
-    stores for each variable given by a string the linenumber in the file.c
-    pos is defined in the .h file with a line and a colum attribute.
-    */
     posMap = new std::map<std::string, pos>();
-    usedMap = new std::map<std::string, bool>();
-    /*
-    points to the next free block of memory of the stack
-    */
+    usedMap = new std::map<std::string, int>();
+    tempIds = new std::vector<std::string>();
+
+    // Initialize variables
     offset = 0;
+    offsetBeforeTemp = 0;
 }
 
-/*
-constructor creates new structs
-*/
 SymbolTable::~SymbolTable()
 {
-    for (auto v : *offsetMap)
-    {
-        *err << v.first << "->" << v.second << std::endl;
-    }
+    // Delete data structures
     delete offsetMap;
     delete posMap;
     delete usedMap;
+    delete tempIds;
 }
-/*
-stores the name, size of the new variable and saves it's offset on the stack
-*/
-void SymbolTable::add(std::string id, size_t size, pos pos)
+
+size_t SymbolTable::add(std::string id, size_t size, pos pos)
 {
-    offset += size; // strange because now the offset of a variable points to the end of the variable...?
+    // Calculate the offset and add it to the map
+    offset += size;
     auto p = offsetMap->emplace(id, offset);
+
+    // Check if the variable was already declared
     if (!p.second)
     {
-        *err << "Error: " << id << " already declared" << std::endl;
-        *err << "\t at line " << pos.line << ":" << pos.column << std::endl;
-        *err << "First declared at " << posMap->at(id).line << ":" << posMap->at(id).line << std::endl;
+        err << "Error: " << id << " already declared" << std::endl;
+        err << "\t at line " << pos.line << ":" << pos.column << std::endl;
+        err << "First declared at " << posMap->at(id).line << ":" << posMap->at(id).line << std::endl;
         exit(1);
     }
 
+    // Add relevant data to the maps
     posMap->emplace(id, pos);
-    usedMap->emplace(id, false);
+    usedMap->emplace(id, 0);
+
+    // Return the offset
+    return offset;
 }
 
-/*
-sets the variable to used which means that a value has been assiged to it
-*/
-void SymbolTable::add(std::string id, size_t size, pos pos, bool state)
+size_t SymbolTable::addTemp(std::string id, size_t size)
 {
+    // Set the offset before the temporary variables only once
+    if (offsetBeforeTemp == 0)
+        offsetBeforeTemp = offset;
+
+    // Add the temporary variable to the list of temporary variables
+    tempIds->push_back(id);
+
     offset += size;
     auto p = offsetMap->emplace(id, offset);
     if (!p.second)
     {
-        *err << "Error: " << id << " already declared" << std::endl;
-        *err << "\t at line " << pos.line << ":" << pos.column << std::endl;
-        *err << "First declared at" << posMap->at(id).line << ":" << posMap->at(id).line << std::endl;
+        // Should never happen
+        err << "Error: " << id << " already declared" << std::endl;
         exit(1);
     }
 
-    posMap->emplace(id, pos);
-    usedMap->emplace(id, state);
+    return offset;
 }
 
-void SymbolTable::used(std::string id)
+void SymbolTable::clearTemp()
 {
-    usedMap->at(id) = true;
+    // Check if there are temporary variables
+    if (tempIds->size() == 0)
+        return;
+
+    // Clear the temporary variables
+    for (auto &id : *tempIds)
+    {
+        offsetMap->erase(id);
+    }
+    // Reset the list and the offset
+    tempIds->clear();
+    offset = offsetBeforeTemp;
+    offsetBeforeTemp = 0;
 }
 
-/*
-retruns the offset on the stack of the given variable
-stops the program if tha variable is not declared
-*/
-int SymbolTable::getOffset(std::string id)
+size_t SymbolTable::getOffset(std::string id, bool init)
 {
+    // Check if the variable is declared
     checkVar(id);
+
+    // If the variable is not initialized and init is false, throw an error
+    if (!init)
+        checkInit(id);
+
+    // Return the offset
     return offsetMap->at(id);
-}
-
-/*
-checks if the variable that should be accessed is declared,
-stops the program if tha variable is not declared
-*/
-void SymbolTable::checkVar(std::string id)
-{
-
-    if (offsetMap->count(id) == 0)
-    {
-        *err << "Error: variable " << id << " is not declared" << std::endl;
-        for (auto it : *offsetMap)
-        {
-            *err << it.first << ": " << it.second << std::endl;
-        }
-        exit(1);
-    }
-}
-
-/*
-checks if any variable has never been used
-returs a warning if not
-*/
-void SymbolTable::checkUse()
-{
-    for (auto v : *usedMap)
-    {
-        if (!v.second) // second argument in <string,bool> is false, so not used
-        {
-            *err << "Warning: variable " << v.first << " is never used" << std::endl;
-            *err << "\t Declared at line " << posMap->at(v.first).line << ":" << posMap->at(v.first).column << std::endl;
-        }
-    }
 }
 
 pos SymbolTable::getPos(std::string id)
 {
+    // Check if the variable is declared
     checkVar(id);
+
+    // Return the position
     return posMap->at(id);
 }
-bool SymbolTable::isContained(std::string id)
+
+void SymbolTable::used(std::string id)
 {
-    std::map<std::string, size_t>::iterator it = offsetMap->find(id);
-    return it != offsetMap->end();
+    // Set the used 'flag'
+    usedMap->at(id) = 2;
+}
+
+void SymbolTable::checkUse()
+{
+    // Check if there are unused variables
+    for (auto v : *usedMap)
+    {
+        // If the variable is not used, emit a warning
+        if (v.second != 2)
+        {
+            err << "Warning: variable " << v.first << " is never used" << std::endl;
+            err << "\t Declared at line " << posMap->at(v.first).line << ":" << posMap->at(v.first).column << std::endl;
+        }
+    }
+}
+
+void SymbolTable::checkVar(std::string id)
+{
+    // Check if the variable is declared
+    if (offsetMap->count(id) == 0)
+    {
+        // Throw an error
+        err << "Error: variable " << id << " is not declared" << std::endl;
+
+        // Print the content of the map
+        // for (auto it : *offsetMap)
+        //     err << it.first << ": " << it.second << std::endl;
+
+        exit(1);
+    }
+}
+
+void SymbolTable::checkInit(std::string id)
+{
+    // Check if the variable is initialized
+    if (usedMap->at(id) == 0)
+    {
+        err << "Error: " << id << " not initialized" << std::endl;
+        exit(1);
+    }
 }
