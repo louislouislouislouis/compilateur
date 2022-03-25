@@ -11,3 +11,15 @@ compiler/runmake_ubuntu.sh
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/tasks.json
+.vscode/settings.json
+compiler/ifcc-test-output/bitwise_and/asm-gcc.s
+compiler/ifcc-test-output/bitwise_and/asm-ifcc.s
+compiler/ifcc-test-output/bitwise_and/exe-gcc
+compiler/ifcc-test-output/bitwise_and/exe-ifcc
+compiler/ifcc-test-output/bitwise_and/gcc-compile.txt
+compiler/ifcc-test-output/bitwise_and/gcc-execute.txt
+compiler/ifcc-test-output/bitwise_and/gcc-link.txt
+compiler/ifcc-test-output/bitwise_and/ifcc-compile.txt
+compiler/ifcc-test-output/bitwise_and/ifcc-execute.txt
+compiler/ifcc-test-output/bitwise_and/ifcc-link.txt
+compiler/ifcc-test-output/bitwise_and/input.c

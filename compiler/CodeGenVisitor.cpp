@@ -175,22 +175,33 @@ antlrcpp::Any CodeGenVisitor::visitConst(ifccParser::ConstContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitBitwise(ifccParser::BitwiseContext *ctx)
 {
-        std::cout << " cucu in der xor schleife\n";
         visitChildren(ctx);
+        std::string element = ctx->getText();
         std::string op = ctx->op->getText();
+        if(!symbolTable.isContained(element)){
+            symbolTable.add(element,4, {0, 0}, true);
+        }
+        int offsetGlobal = symbolTable.getOffset(element);
         int offsetVar_1 = symbolTable.getOffset(ctx->arithmetic(0)->getText());
-        std::cout << "var_1 "<<ctx->arithmetic(0)->getText()<<"\n";
-        std::cout << "var_2 "<<ctx->arithmetic(1)->getText()<<"\n";
+        // std::cout << "var_1 "<<ctx->arithmetic(0)->getText()<<"\n";
+        // std::cout << "var_2 "<<ctx->arithmetic(1)->getText()<<"\n";
         int offsetVar_2 = symbolTable.getOffset(ctx->arithmetic(1)->getText());
+        std::cerr << "Bitwise:" << std::endl;
+        std::cout << std::endl;
         if(op == "&"){
-            std::cout << " 	movl	-" <<offsetVar_1<< "(%rbp), (%eax)\n";
-            std::cout << " 	addl	-" <<offsetVar_2<< "(%rbp), (%eax)\n";
+            std::cout << " 	movl	-" <<offsetVar_1<< "(%rbp), %eax\n";
+            std::cout << " 	andl	-" <<offsetVar_2<< "(%rbp), %eax\n";
+            std::cout << " 	movl	%eax, -"<<offsetGlobal<< "(%rbp)\n";
         }
         else if(op == "|"){
-
+            std::cout << " 	movl	-" <<offsetVar_1<< "(%rbp), %eax\n";
+            std::cout << " 	orl	-" <<offsetVar_2<< "(%rbp), %eax\n";
+            std::cout << " 	movl	%eax, -"<<offsetGlobal<< "(%rbp)\n";
         }
         else if(op == "^"){
-
+            std::cout << " 	movl	-" <<offsetVar_1<< "(%rbp), %eax\n";
+            std::cout << " 	xorl	-" <<offsetVar_2<< "(%rbp), %eax\n";
+            std::cout << " 	movl	%eax, -"<<offsetGlobal<< "(%rbp)\n";
         }
         return 0;
 }
@@ -203,7 +214,7 @@ antlrcpp::Any CodeGenVisitor::visitAddminus(ifccParser::AddminusContext *ctx)
     int offsetGauche = symbolTable.getOffset(ctx->arithmetic(0)->getText());
     int offsetDroite = symbolTable.getOffset(ctx->arithmetic(1)->getText());
     if (!symbolTable.isContained(element))
-        symbolTable.add(element, 4, {0, 0}, true);
+        symbolTable.add(element, 4, {0, 0}, true);  //must be fixed beacause wrong position
     int offsetGlobal = symbolTable.getOffset(element);
     std::string op = ctx->op->getText();
     std::string keyWord;
