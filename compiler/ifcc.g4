@@ -4,7 +4,9 @@ axiom: prog;
 
 prog: 'int' 'main' '(' ')' '{' expr+ '}';
 
-expr: (ret | decl | assign | inlineArithmetic)? ';';
+expr: (ret | decl | assign | inlineArithmetic)? ';'
+	| conditionnal
+	| loopW;
 
 ret: 'return' rval;
 
@@ -25,10 +27,20 @@ arithmetic:
 	| arithmetic op = ('<=' | '>=' | '<' | '>') arithmetic	# comprel
 	| arithmetic op = ('==' | '!=') arithmetic				# compeq
 	| arithmetic op = ('&&' | '||') arithmetic				# oplog
-	| arithmetic op = ('&'  | '^'  | '|' ) arithmetic 		# bitwise
+	| arithmetic op = ('&' | '^' | '|') arithmetic			# bitwise
 	| '(' arithmetic ')'									# par
 	| CONST													# const
 	| ID													# id;
+
+conditionnal:
+	'if' '(' inlineArithmetic ')' (expr | '{' expr+ '}') (
+		'else' ('if' '(' inlineArithmetic ')')? (
+			expr
+			| '{' expr+ '}'
+		)
+	)?;
+
+loopW: 'while' '(' inlineArithmetic ')' (expr | '{' expr+ '}');
 
 OPTOK: '--' | '++';
 RETURN: 'return';
