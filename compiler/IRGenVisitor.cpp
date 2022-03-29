@@ -1,7 +1,10 @@
 #include "IRGenVisitor.h"
 antlrcpp::Any IRGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
-    // Generate the body of the main function
+    
+	instructionsList.push_back(new CFG())
+	
+	// Generate the body of the main function
     visitChildren(ctx);
 
     // Check for unused variables

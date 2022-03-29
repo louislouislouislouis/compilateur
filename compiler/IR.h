@@ -87,7 +87,7 @@ public:
 	void add_IRInstr(IRInstr::Operation op, vector<string> params);
 
 	// No encapsulation whatsoever here. Feel free to do better.
-	BasicBlock *exit_true;	  /**< pointer to the next basic block, true branch. If nullptr, return from procedure */
+	BasicBlock *exit_true;	  /**< default pointer to the next basic block, true branch. If nullptr, return from procedure */
 	BasicBlock *exit_false;	  /**< pointer to the next basic block, false branch. If null_ptr, the basic block ends with an unconditional jump */
 	string label;			  /**< label of the BB, also will be the label in the generated code GOTO*/
 	CFG *cfg;				  /** < the CFG where this block belongs */
@@ -110,7 +110,12 @@ class CFG
 {
 public:
 	// CFG(DefFonction* ast); --OLD
-	CFG() : symbolTable(std::cout, std::cerr){};
+	CFG() : localSymbolTable(std::cout, std::cerr){
+		this->bbs = vector<BasicBlock*>();
+		this->current_bb = nullptr;
+		this->add_bb(new BasicBlock(this, "prolog"));
+		this->add_bb(new BasicBlock(this, "epilog"));
+	};
 
 	// DefFonction *ast; /**< The AST this CFG comes from */
 
@@ -133,7 +138,7 @@ public:
 	BasicBlock *current_bb;
 
 protected:
-	SymbolTable symbolTable;
+	SymbolTable localSymbolTable;
 	// map <string, Type> SymbolType; /**< part of the symbol table  */
 	// map <string, int> SymbolIndex; /**< part of the symbol table  */
 	// int nextFreeSymbolIndex; /**< to allocate new symbols in the symbol table */
