@@ -60,22 +60,77 @@ void IRInstr::gen_asm(ostream &o)
     switch (op)
     {
     case ldconst:
-
+        // C: var = const
+        // params[0] = var
+        // params[1] = const
         o << "\tmovl \t$" << params[1] << ", -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-
         break;
     case copy:
-
+        // C: var1 = var2
+        // params[0] = var1
+        // params[1] = var2
         o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
         o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-
         break;
     case add:
+        // C: var1 = var2 + var3
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3       
         o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
         o << "\taddl \t-" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
-
         o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-
+        break;
+    case sub:
+        // C: var1 = var2 - var3
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\tsubl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        break;
+    case mul:
+        // C: var1 = var2 * var3
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\timull \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        break;
+    case eq:
+        // var2 == var3 ?
+        // C: var1 = (var2==var3);
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tsete \t%al" << endl;
+        o << " \tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        break;
+    case lt: 
+        // var2 < var3 ?
+        // C: var1 = (var2==var3);
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tsetl \t%al" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        break;
+    case leq:
+        // var2 <= var3 ?
+        // C: var1 = (var2==var3);
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << " \tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tsetle \t%al" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
         break;
     case ret:
 
