@@ -34,6 +34,8 @@ public:
 	virtual antlrcpp::Any visitOplog(ifccParser::OplogContext *ctx) override;
 	virtual antlrcpp::Any visitId(ifccParser::IdContext *ctx) override;
 	virtual antlrcpp::Any visitRet(ifccParser::RetContext *ctx) override;
+	virtual antlrcpp::Any visitLoopW(ifccParser::LoopWContext *ctx) override;
+	virtual antlrcpp::Any visitConditionnal(ifccParser::ConditionnalContext *ctx) override;
 
 	ArithmeticNode<int> *binaryOp(ArithmeticNode<int> *left, ArithmeticNode<int> *right, std::string op);
 	~IRGenVisitor()

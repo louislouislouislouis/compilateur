@@ -38,9 +38,9 @@ void BasicBlock::gen_asm(ostream &o)
     }
     else
     {
-        o << "\tcmp " << test_var_name << ", 1" << std::endl;
-        o << "\tjne " << exit_false->label << std::endl;
-        o << "\tjmp " << exit_true->label << std::endl;
+        o << "\tcmpl\t$1,-" << this->cfg->get_var_off(test_var_name) << "(%rbp) " << std::endl;
+        o << "\tjne\t" << exit_false->label << std::endl;
+        o << "\tjmp\t" << exit_true->label << std::endl;
     }
 }
 
@@ -56,7 +56,7 @@ void BasicBlock::add_IRInstr(IRInstr::Operation op, std::vector<std::string> par
 
 void IRInstr::gen_asm(ostream &o)
 {
-
+    std::string left = "", right = "";
     switch (op)
     {
     case ldconst:
@@ -73,12 +73,24 @@ void IRInstr::gen_asm(ostream &o)
         o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
         break;
     case add:
-        // C: var1 = var2 + var3
-        // params[0] = var1
-        // params[1] = var2
-        // params[2] = var3       
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
-        o << "\taddl \t-" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        if (params[1][0] == '$')
+        {
+            left = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
+            right = params[1];
+        }
+        else if (params[2][0] == '$')
+        {
+            left = "-" + this->bb->cfg->get_var_off(params[1]) + "(%rbp)";
+            right = params[2];
+        }
+        else
+        {
+            left = "-" + this->bb->cfg->get_var_off(params[1]) + "(%rbp)";
+            right = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
+        }
+        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\taddl \t" << right << ", %eax" << endl;
+
         o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
         break;
     case sub:
@@ -110,17 +122,6 @@ void IRInstr::gen_asm(ostream &o)
         o << "\tsete \t%al" << endl;
         o << " \tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
         break;
-    case lt: 
-        // var2 < var3 ?
-        // C: var1 = (var2==var3);
-        // params[0] = var1
-        // params[1] = var2
-        // params[2] = var3
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
-        o << "\tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
-        o << "\tsetl \t%al" << endl;
-        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-        break;
     case leq:
         // var2 <= var3 ?
         // C: var1 = (var2==var3);
@@ -135,7 +136,31 @@ void IRInstr::gen_asm(ostream &o)
     case ret:
 
         o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[0]) << "(%rbp), %eax" << endl;
+        break;
+    case lt:
 
+        if (params[1][0] == '$')
+        {
+            left = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
+            right = params[1];
+        }
+        else if (params[2][0] == '$')
+        {
+            left = "-" + this->bb->cfg->get_var_off(params[1]) + "(%rbp)";
+            right = params[2];
+        }
+        else
+        {
+            left = "-" + this->bb->cfg->get_var_off(params[1]) + "(%rbp)";
+            right = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
+        }
+        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\tcmpl \t" << right << ", %eax" << endl;
+        o << "\tsetl \t%al" << endl;
+        o << "\tmovzbl \t%al, %eax" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+
+        break;
     default:
         break;
     }
