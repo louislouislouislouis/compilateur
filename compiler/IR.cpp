@@ -34,16 +34,32 @@ void IRInstr::gen_asm(ostream &o) {
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        /* code */
+        o << " 	movl -" << bb->cfg->localSymbolTable.getOffset(params[1]) << "(%rbp), %eax\n";
+        o << " 	" << "addl" << " -" << bb->cfg->localSymbolTable.getOffset(params[2]) << "(%rbp), %eax\n";
+        o << " 	movl %eax, -" << bb->cfg->localSymbolTable.getOffset(params[0]) << "(%rbp)\n";
         break;
     case sub:
-        /* code */
+        // C: var1 = var2 - var3
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << " 	movl -" << bb->cfg->localSymbolTable.getOffset(params[1]) << "(%rbp), %eax\n";
+        o << " 	" << "subl" << " -" << bb->cfg->localSymbolTable.getOffset(params[2]) << "(%rbp), %eax\n";
+        o << " 	movl %eax, -" << bb->cfg->localSymbolTable.getOffset(params[0]) << "(%rbp)\n";
         break;
     case mul:
-        /* code */
+        // C: var1 = var2 * var3
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << " 	movl -" << bb->cfg->localSymbolTable.getOffset(params[1]) << "(%rbp), %eax\n";
+        o << " 	" << "imull" << " -" << bb->cfg->localSymbolTable.getOffset(params[2]) << "(%rbp), %eax\n";
+        o << " 	movl %eax, -" << bb->cfg->localSymbolTable.getOffset(params[0]) << "(%rbp)\n";
         break;
     case rmem:
-        /* code */
+        // C: dest = *addr
+        // params[0] = var1 (dest)
+        // params[1] = var2 (*addr)
         break;
     case wmem:
         /* code */
@@ -52,13 +68,41 @@ void IRInstr::gen_asm(ostream &o) {
         /* code */
         break;
     case cmp_eq:
-        /* code */
+        // var2 == var3 ?
+        // C: var1 = (var2==var3);
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << " 	movl -" << bb->cfg->localSymbolTable.getOffset(params[1]) << "(%rbp), %eax\n";
+        o << " 	" << "cmpl" << " -" << bb->cfg->localSymbolTable.getOffset(params[2]) << "(%rbp), %eax\n";
+        o << " 	movl %eax, -" << bb->cfg->localSymbolTable.getOffset(params[0]) << "(%rbp)\n";
+        o << " jne " << bb->exit_false->label << "\n";
+        o << " jmp " << bb->exit_true->label << "\n";
         break;
-    case cmp_lt:
-        /* code */
+        break;
+    case cmp_lt: 
+        // var2 < var3 ?
+        // C: var1 = (var2==var3);
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << " 	movl -" << bb->cfg->localSymbolTable.getOffset(params[1]) << "(%rbp), %eax\n";
+        o << " 	" << "cmpl" << " -" << bb->cfg->localSymbolTable.getOffset(params[2]) << "(%rbp), %eax\n";
+        o << " 	movl %eax, -" << bb->cfg->localSymbolTable.getOffset(params[0]) << "(%rbp)\n";
+        o << " jge " << bb->exit_false->label << "\n";
+        o << " jmp " << bb->exit_true->label << "\n";
         break;
     case cmp_le:
-        /* code */
+        // var2 <= var3 ?
+        // C: var1 = (var2==var3);
+        // params[0] = var1
+        // params[1] = var2
+        // params[2] = var3
+        o << " 	movl -" << bb->cfg->localSymbolTable.getOffset(params[1]) << "(%rbp), %eax\n";
+        o << " 	" << "cmpl" << " -" << bb->cfg->localSymbolTable.getOffset(params[2]) << "(%rbp), %eax\n";
+        o << " 	movl %eax, -" << bb->cfg->localSymbolTable.getOffset(params[0]) << "(%rbp)\n";
+        o << " jle " << bb->exit_true->label << "\n";
+        o << " jmp " << bb->exit_false->label << "\n";
         break;                                    
     default:
         break;
