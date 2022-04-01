@@ -106,10 +106,8 @@ void IRInstr::gen_asm(ostream &o)
         // params[2] = var3
         o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
         o << "\tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tsete \t%al" << endl;
         o << " \tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-        o << "\tjne \t" << bb->exit_false->label << endl;
-        o << "\tjmp \t" << bb->exit_true->label << endl;
-        break;
         break;
     case lt: 
         // var2 < var3 ?
@@ -119,9 +117,8 @@ void IRInstr::gen_asm(ostream &o)
         // params[2] = var3
         o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
         o << "\tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tsetl \t%al" << endl;
         o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-        o << "\tjge \t" << bb->exit_false->label << endl;
-        o << "\tjmp \t" << bb->exit_true->label << endl;
         break;
     case leq:
         // var2 <= var3 ?
@@ -131,9 +128,8 @@ void IRInstr::gen_asm(ostream &o)
         // params[2] = var3
         o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
         o << " \tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tsetle \t%al" << endl;
         o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-        o << "\tjle \t" << bb->exit_true->label << endl;
-        o << "\tjmp \t" << bb->exit_false->label << endl;
         break;    
     case ret:
         o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[0]) << "(%rbp), %eax" << endl;

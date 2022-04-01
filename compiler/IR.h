@@ -174,9 +174,7 @@ public:
 	// basic block management
 	string new_BB_name() { return "." + name + "_" + std::to_string(nextBBnumber++); }
 	BasicBlock *current_bb;
-<<<<<<< HEAD
-	SymbolTable localSymbolTable;
-=======
+
 	void gen_prolog(ostream &o)
 	{
 		o << this->name << ":\n	pushq %rbp\n	movq %rsp, %rbp\n";
@@ -187,7 +185,6 @@ public:
 		o << "." + this->name + "_e:\n"
 		  << "\tpopq %rbp\n	ret\n";
 	}
->>>>>>> while
 
 protected:
 	// map <string, Type> SymbolType; /**< part of the symbol table  */
@@ -196,4 +193,5 @@ protected:
 	int nextBBnumber; /**< just for naming */
 	std::string name;
 	vector<BasicBlock *> bbs; /**< all the basic blocks of this CFG*/
+	SymbolTable localSymbolTable;
 };
