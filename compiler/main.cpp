@@ -8,7 +8,6 @@
 #include "generated/ifccParser.h"
 #include "generated/ifccBaseVisitor.h"
 
-
 #include "CodeGenVisitor.h"
 #include "IRGenVisitor.h"
 #include "IR.h"
@@ -42,12 +41,11 @@ int main(int argn, const char **argv)
     std::cerr << "error: syntax error during parsing" << std::endl;
     exit(1);
   }
-  
-  IRGenVisitor o;
+
+  IRGenVisitor o = IRGenVisitor();
   o.visit(tree);
 
-  //CodeGenVisitor v;
-  //v.visit(tree);
-
+  // CodeGenVisitor v;
+  // v.visit(tree);
   return 0;
 }

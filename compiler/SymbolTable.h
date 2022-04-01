@@ -14,7 +14,7 @@ class SymbolTable
 public:
     SymbolTable(std::ostream &_out, std::ostream &_err);
     ~SymbolTable();
-
+    ;
     /*
      * Add a variable to the symbol table
      * @param id: the name of the variable
@@ -23,7 +23,7 @@ public:
      * @return the offset of the variable
      *
      */
-    size_t add(std::string id, size_t size, pos pos);
+    size_t add(std::string id, std::string type, pos pos);
 
     /*
      * Add a temporary variable to the symbol table
@@ -31,10 +31,10 @@ public:
      * @param size: the size of the variable in bytes
      * @return the offset of the variable
      */
-    size_t addTemp(std::string id, size_t size);
+    size_t addTemp(std::string id, std::string type, pos pos = {0, 0});
 
     // Clear the temporary variables
-    void clearTemp();
+    // void clearTemp();
 
     /*
      * Get the offset of the variable
@@ -69,7 +69,7 @@ private:
     size_t offset;
 
     // Offset of the last declared variable before a temp variable
-    size_t offsetBeforeTemp;
+    // size_t offsetBeforeTemp;
 
     // List of temp variables' names
     std::vector<std::string> *tempIds;

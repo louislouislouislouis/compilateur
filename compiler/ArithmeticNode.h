@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include "IR.h"
 
 // Node type definitions
 enum class Type
@@ -76,7 +77,7 @@ public:
 	 * @param dest the destination variable
 	 * @param o The output stream
 	 */
-	virtual void writeASM(SymbolTable *s, std::string dest, std::ostream &o) const {};
+	virtual void generate(CFG *cfg, std::string dest) const {};
 };
 
 template <typename T>
@@ -88,11 +89,13 @@ private:
 
 public:
 	T eval() const override { return value; }
-	void writeASM(SymbolTable *s, std::string dest, std::ostream &o) const override
+	void generate(CFG *cfg, std::string dest) const override
 	{
-		std::string sDest = dest[0] == '%' ? dest : this->oftos(s->getOffset(dest, true));
 
-		o << "	movl	$" << value << ", " << sDest << std::endl;
+		// std::string sDest = dest[0] == '%' ? dest : this->oftos(cfg->getST()->getOffset(dest, true));
+
+		// o << "	movl	$" << value << ", " << sDest << std::endl;
+		cfg->current_bb->add_IRInstr(IRInstr::Operation::ldconst, std::vector{dest, std::to_string(value)});
 	}
 	ConstNode(T v) : value(v){};
 };
@@ -105,19 +108,23 @@ private:
 
 public:
 	Type type() const override { return Type::VAR; }
-	void writeASM(SymbolTable *s, std::string dest, std::ostream &o) const override
+	void generate(CFG *cfg, std::string dest) const override
 	{
 
-		std::string sSrc = this->oftos(s->getOffset(name));
-		if (dest.at(0) == '%')
-		{
-			o << "	movl	" << sSrc << ", " << dest << std::endl;
-		}
-		else
-		{
-			o << "	movl	" << sSrc << ", %eax" << std::endl;
-			o << "	movl	%eax, " << this->oftos(s->getOffset(dest, true)) << std::endl;
-		}
+		// std::string sSrc = this->oftos(cfg->getST()->getOffset(name));
+		// if (dest[0] == '%')
+		// cfg->current_bb->add_IRInstr(IRInstr::Operation::wmem, std::vector<std::string>{dest, name});
+		// else
+		cfg->current_bb->add_IRInstr(IRInstr::Operation::copy, std::vector<std::string>{dest, name});
+		// if (dest.at(0) == '%')
+		// {
+		// 	o << "	movl	" << sSrc << ", " << dest << std::endl;
+		// }
+		// else
+		// {
+		// 	o << "	movl	" << sSrc << ", %eax" << std::endl;
+		// 	o << "	movl	%eax, " << this->oftos(s->getOffset(dest, true)) << std::endl;
+		// }
 	};
 	std::string getName() const { return name; };
 	VarNode(std::string n) : name(n){};
@@ -141,30 +148,32 @@ public:
 		else
 			return T();
 	}
-	void writeASM(SymbolTable *s, std::string dest, std::ostream &o) const override
+	void generate(CFG *cfg, std::string dest) const override
 	{
-		std::string sDest = dest[0] == '%' ? dest : this->oftos(s->getOffset(dest, true));
+		// std::string sDest = dest[0] == '%' ? dest : this->oftos(cfg->getST()->getOffset(dest, true));
 
 		if (op == "+")
 		{
-			ArithmeticNode<T>::left->writeASM(s, sDest, o);
+			ArithmeticNode<T>::left->generate(cfg, dest);
 		}
 		else if (op == "-")
 		{
-			ArithmeticNode<T>::left->writeASM(s, sDest, o);
-			o << "	negl	" << sDest << std::endl;
+			ArithmeticNode<T>::left->generate(cfg, dest);
+			cfg->current_bb->add_IRInstr(IRInstr::Operation::neg, dest);
+			// o << "	negl	" << sDest << std::endl;
 		}
 		else if (op == "!")
 		{
 
-			ArithmeticNode<T>::left->writeASM(s, "%eax", o);
-			o << "	cmpl	$0, %eax" << std::endl;
-			o << "	sete	%al\n";
-			o << "	movzbl	%al, %eax\n";
-			if (sDest != "%eax")
-			{
-				o << "	movl	%eax, " << sDest << std::endl;
-			}
+			ArithmeticNode<T>::left->generate(cfg, "%eax");
+			cfg->current_bb->add_IRInstr(IRInstr::Operation::not_, dest);
+			// o << "	cmpl	$0, %eax" << std::endl;
+			// o << "	sete	%al\n";
+			// o << "	movzbl	%al, %eax\n";
+			// if (sDest != "%eax")
+			// {
+			// 	o << "	movl	%eax, " << sDest << std::endl;
+			// }
 		}
 	}
 	UnaryNode(std::string op, ArithmeticNode<T> *o) : ArithmeticNode<int>(o, nullptr), op(op){};
@@ -216,113 +225,124 @@ public:
 		else
 			return T();
 	}
-	void writeASM(SymbolTable *s, std::string dest, std::ostream &o) const override
+	void generate(CFG *cfg, std::string dest) const override
 	{
 
-		std::string sDest = dest[0] == '%' ? dest : this->oftos(s->getOffset(dest, true));
-		std::map<std::string, std::string> ops = {
-			{"+", "addl"},
-			{"-", "subl"},
-			{"*", "imull"},
-			{"/", "idivl"},
-			{"%", "idivl"},
-			{"==", "e"},
-			{"!=", "ne"},
-			{"<", "l"},
-			{"<=", "le"},
-			{">", "g"},
-			{">=", "ge"},
-			{"&&", "andl"},
-			{"||", "orl"},
-			{"|", "orl"},
-			{"&", "andl"},
-			{"^", "xorl"},
+		// std::string sDest = dest[0] == '%' ? dest : this->oftos(s->getOffset(dest, true));
+		std::map<std::string, IRInstr::Operation> ops = {
+			{"+", IRInstr::Operation::add},
+			{"-", IRInstr::Operation::sub},
+			{"*", IRInstr::Operation::mul},
+			{"/", IRInstr::Operation::div},
+			{"%", IRInstr::Operation::mod},
+			{"<", IRInstr::Operation::lt},
+			{">", IRInstr::Operation::gt},
+			{"==", IRInstr::Operation::eq},
+			{"!=", IRInstr::Operation::neq},
+			{"<=", IRInstr::Operation::leq},
+			{">=", IRInstr::Operation::geq},
+			{"&&", IRInstr::Operation::and_},
+			{"||", IRInstr::Operation::or_},
+			{"&", IRInstr::Operation::band},
+			{"|", IRInstr::Operation::bor},
+			{"^", IRInstr::Operation::bxor},
+
 		};
-		std::string keyWord = ops[op];
-		std::string rName;
-		size_t rOffset;
-		std::string asmName;
-		std::cerr << "BinaryNode::writeASM-> " << op << " " << (int)this->right->type() << std::endl;
+		auto operation = ops[op];
+		std::string rName, lName;
+		// std::cerr << "BinaryNode::generate-> " << op << " " << (int)this->right->type() << std::endl;
 		if (this->right->type() == Type::VAR)
 		{
 			rName = dynamic_cast<VarNode<int> *>(this->right)->getName();
-			rOffset = s->getOffset(rName);
-			asmName = this->oftos(rOffset);
 		}
 		else if (this->right->type() == Type::CONST)
 		{
-
-			asmName = "$" + std::to_string(this->right->eval());
-			std::cerr << this->right->eval() << std::endl;
+			rName = "$" + std::to_string(this->right->eval());
 		}
 		else
 		{
 			rName = this->ptos(this->right);
-			std::cerr << "rName: " << rName << std::endl;
-
-			rOffset = s->addTemp(
+			cfg->getST()->addTemp(
 				rName,
-				4);
-			this->right->writeASM(s, rName, o);
-			asmName = this->oftos(rOffset);
+				"int");
+			this->right->generate(cfg, rName);
 		}
-		std::cerr << "asmName: " << asmName << std::endl;
 
-		this->left->writeASM(s, "%eax", o);
-
-		if (op == "+" || op == "-" || op == "*" || op == "|" || op == "^" || op == "&")
+		if (this->left->type() == Type::VAR)
 		{
-			o << "	" << keyWord << "	" << asmName << ", %eax" << std::endl;
-			if (dest != "%eax")
-				o << "	movl	%eax, " << sDest << std::endl;
+			lName = dynamic_cast<VarNode<int> *>(this->left)->getName();
 		}
-		else if (op == "%" || op == "/")
+		else if (this->left->type() == Type::CONST)
 		{
-			if (asmName[0] == '$')
-			{
-				o << "	movl	" << asmName << ", %ecx" << std::endl;
-				asmName = "%ecx";
-			}
-
-			o << "	cltd" << std::endl;
-			o << "	" << keyWord << "	" << asmName << std::endl;
-			std::string src = op == "%" ? "%edx" : "%eax";
-			if (src != sDest)
-			{
-				o << "	movl	" << src << ", " << sDest << std::endl;
-			}
+			lName = "$" + std::to_string(this->left->eval());
 		}
-		else if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=")
+		else
 		{
-			keyWord = "set" + keyWord;
-			o << "	cmpl	" << asmName << ", %eax" << std::endl;
-			o << "	" << keyWord << "	%al" << std::endl;
-			o << "	movzbl	%al, %eax" << std::endl;
-			if (dest != "%eax")
-				o << "	movl	%eax, " << sDest << std::endl;
+			lName = this->ptos(this->left);
+			cfg->getST()->addTemp(
+				lName,
+				"int");
+			this->left->generate(cfg, lName);
 		}
-		else if (op == "&&" || op == "||")
-		{
-			// TODO: Find a way to do this more efficiently
-			// left in %eax
-			// asmName right
-			int v = op == "&&" ? 1 : 2;
-			std::cout << "	cmpl $0, %eax\n";
-			std::cout << "	sete %dl\n";
 
-			std::cout << "	movl	" << asmName << ", %eax\n";
-			std::cout << "	cmpl $0, %eax\n";
-			std::cout << "	sete %dh\n";
+		cfg->current_bb->add_IRInstr(operation, {dest, lName, rName});
+		// std::cerr << "asmName: " << asmName << std::endl;
 
-			std::cout << "	add %dh, %dl\n";
-			std::cout << "	movzb %dl, %eax\n";
-			std::cout << "	cmpl $" << v << ", %eax\n";
-			std::cout << "	setl %al\n";
+		// this->left->generate(s, "%eax", o);
 
-			std::cout << "	movzb %al, %eax\n";
-			if (dest != "%eax")
-				o << "	movl	%eax, " << sDest << std::endl;
-		}
+		// if (op == "+" || op == "-" || op == "*" || op == "|" || op == "^" || op == "&")
+		// {
+		// 	o << "	" << keyWord << "	" << asmName << ", %eax" << std::endl;
+		// 	if (dest != "%eax")
+		// 		o << "	movl	%eax, " << sDest << std::endl;
+		// }
+		// else if (op == "%" || op == "/")
+		// {
+		// 	if (asmName[0] == '$')
+		// 	{
+		// 		o << "	movl	" << asmName << ", %ecx" << std::endl;
+		// 		asmName = "%ecx";
+		// 	}
+
+		// 	o << "	cltd" << std::endl;
+		// 	o << "	" << keyWord << "	" << asmName << std::endl;
+		// 	std::string src = op == "%" ? "%edx" : "%eax";
+		// 	if (src != sDest)
+		// 	{
+		// 		o << "	movl	" << src << ", " << sDest << std::endl;
+		// 	}
+		// }
+		// else if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=")
+		// {
+		// 	keyWord = "set" + keyWord;
+		// 	o << "	cmpl	" << asmName << ", %eax" << std::endl;
+		// 	o << "	" << keyWord << "	%al" << std::endl;
+		// 	o << "	movzbl	%al, %eax" << std::endl;
+		// 	if (dest != "%eax")
+		// 		o << "	movl	%eax, " << sDest << std::endl;
+		// }
+		// else if (op == "&&" || op == "||")
+		// {
+		// 	// TODO: Find a way to do this more efficiently
+		// 	// left in %eax
+		// 	// asmName right
+		// 	int v = op == "&&" ? 1 : 2;
+		// 	std::cout << "	cmpl $0, %eax\n";
+		// 	std::cout << "	sete %dl\n";
+
+		// 	std::cout << "	movl	" << asmName << ", %eax\n";
+		// 	std::cout << "	cmpl $0, %eax\n";
+		// 	std::cout << "	sete %dh\n";
+
+		// 	std::cout << "	add %dh, %dl\n";
+		// 	std::cout << "	movzb %dl, %eax\n";
+		// 	std::cout << "	cmpl $" << v << ", %eax\n";
+		// 	std::cout << "	setl %al\n";
+
+		// 	std::cout << "	movzb %al, %eax\n";
+		// 	if (dest != "%eax")
+		// 		o << "	movl	%eax, " << sDest << std::endl;
+		// }
 	}
 
 	BinaryNode(std::string o, ArithmeticNode<T> *l, ArithmeticNode<T> *r) : ArithmeticNode<int>(l, r), op(o){};
