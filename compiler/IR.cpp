@@ -85,18 +85,18 @@ void IRInstr::gen_asm(ostream &o)
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << " 	movl -" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax\n";
-        o << " 	" << "subl" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax\n";
-        o << " 	movl %eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)\n";
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\tsubl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
         break;
     case mul:
         // C: var1 = var2 * var3
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << " 	movl -" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax\n";
-        o << " 	" << "imull" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax\n";
-        o << " 	movl %eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)\n";
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\timull \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
         break;
     case eq:
         // var2 == var3 ?
@@ -104,11 +104,11 @@ void IRInstr::gen_asm(ostream &o)
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << " 	movl -" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax\n";
-        o << " 	" << "cmpl" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax\n";
-        o << " 	movl %eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)\n";
-        o << " jne " << bb->exit_false->label << "\n";
-        o << " jmp " << bb->exit_true->label << "\n";
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << " \tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        o << "\tjne \t" << bb->exit_false->label << endl;
+        o << "\tjmp \t" << bb->exit_true->label << endl;
         break;
         break;
     case lt: 
@@ -117,11 +117,11 @@ void IRInstr::gen_asm(ostream &o)
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << " 	movl -" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax\n";
-        o << " 	" << "cmpl" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax\n";
-        o << " 	movl %eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)\n";
-        o << " jge " << bb->exit_false->label << "\n";
-        o << " jmp " << bb->exit_true->label << "\n";
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        o << "\tjge \t" << bb->exit_false->label << endl;
+        o << "\tjmp \t" << bb->exit_true->label << endl;
         break;
     case leq:
         // var2 <= var3 ?
@@ -129,11 +129,11 @@ void IRInstr::gen_asm(ostream &o)
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << " 	movl -" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax\n";
-        o << " 	" << "cmpl" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax\n";
-        o << " 	movl %eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)\n";
-        o << " jle " << bb->exit_true->label << "\n";
-        o << " jmp " << bb->exit_false->label << "\n";
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << " \tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
+        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        o << "\tjle \t" << bb->exit_true->label << endl;
+        o << "\tjmp \t" << bb->exit_false->label << endl;
         break;    
     case ret:
         o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[0]) << "(%rbp), %eax" << endl;
