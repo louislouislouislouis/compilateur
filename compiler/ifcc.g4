@@ -34,10 +34,7 @@ arithmetic:
 
 conditionnal:
 	'if' '(' inlineArithmetic ')' (expr | '{' expr+ '}') (
-		'else' ('if' '(' inlineArithmetic ')')? (
-			expr
-			| '{' expr+ '}'
-		)
+		'else' (conditionnal | expr | '{' expr+ '}')
 	)?;
 
 loopW: 'while' '(' inlineArithmetic ')' (expr | '{' expr+ '}');

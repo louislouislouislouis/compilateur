@@ -1,6 +1,7 @@
 #include "SymbolTable.h"
 
-SymbolTable::SymbolTable(std::ostream &_out, std::ostream &_err) : out(_out), err(_err)
+SymbolTable::SymbolTable(std::ostream &_out, std::ostream &_err) : out(_out),
+                                                                   err(_err)
 {
     // Initialize data structures
     offsetMap = new std::map<std::string, size_t>();
@@ -10,7 +11,6 @@ SymbolTable::SymbolTable(std::ostream &_out, std::ostream &_err) : out(_out), er
 
     // Initialize variables
     offset = 0;
-    offsetBeforeTemp = 0;
 }
 
 SymbolTable::~SymbolTable()
@@ -22,9 +22,14 @@ SymbolTable::~SymbolTable()
     delete tempIds;
 }
 
-size_t SymbolTable::add(std::string id, size_t size, pos pos)
+size_t SymbolTable::add(std::string id, std::string type, pos pos)
 {
     // Calculate the offset and add it to the map
+    std::map<std::string, uint> typeSize = {
+        {"int", 4},
+        {"char", 1},
+        {"bool", 1}};
+    auto size = typeSize[type];
     offset += size;
     auto p = offsetMap->emplace(id, offset);
 
@@ -45,42 +50,12 @@ size_t SymbolTable::add(std::string id, size_t size, pos pos)
     return offset;
 }
 
-size_t SymbolTable::addTemp(std::string id, size_t size)
+size_t SymbolTable::addTemp(std::string id, std::string type, pos pos)
 {
-    // Set the offset before the temporary variables only once
-    if (offsetBeforeTemp == 0)
-        offsetBeforeTemp = offset;
-
-    // Add the temporary variable to the list of temporary variables
-    tempIds->push_back(id);
-
-    offset += size;
-    auto p = offsetMap->emplace(id, offset);
-    if (!p.second)
-    {
-        // Should never happen
-        err << "Error: " << id << " already declared" << std::endl;
-        exit(1);
-    }
-
-    return offset;
-}
-
-void SymbolTable::clearTemp()
-{
-    // Check if there are temporary variables
-    if (tempIds->size() == 0)
-        return;
-
-    // Clear the temporary variables
-    for (auto &id : *tempIds)
-    {
-        offsetMap->erase(id);
-    }
-    // Reset the list and the offset
-    tempIds->clear();
-    offset = offsetBeforeTemp;
-    offsetBeforeTemp = 0;
+    auto r = this->add(id, type, pos);
+    this->tempIds->push_back(id);
+    this->usedMap->at(id) = 2;
+    return r;
 }
 
 size_t SymbolTable::getOffset(std::string id, bool init)
@@ -108,6 +83,7 @@ pos SymbolTable::getPos(std::string id)
 void SymbolTable::used(std::string id)
 {
     // Set the used 'flag'
+
     usedMap->at(id) = 2;
 }
 

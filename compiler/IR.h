@@ -1,11 +1,10 @@
-#ifndef IR_H
-#define IR_H
+#pragma once
 
 #include <vector>
 #include <string>
 #include <iostream>
 #include <initializer_list>
-
+#include <sstream>
 // Declarations from the parser -- replace with your own
 #include "SymbolTable.h"
 //#include "type.h"
@@ -28,20 +27,35 @@ public:
 		add,
 		sub,
 		mul,
-		rmem,
-		wmem,
-		call,
-		cmp_eq,
-		cmp_lt,
-		cmp_le
+		neg,
+		not_,
+		ret,
+		div,
+		mod,
+		lt,
+		gt,
+		eq,
+		neq,
+		leq,
+		geq,
+		and_,
+		or_,
+		band,
+		bor,
+		bxor,
+		// rmem,
+		// wmem,
+		// call,
 	} Operation;
 
 	/**  constructor */
 	// IRInstr(BasicBlock* bb_, Operation op, Type t, vector<string> params);  --OLD ONE
-	IRInstr(BasicBlock *bb_, Operation op, vector<string> params);
+	IRInstr(BasicBlock *bb_, Operation op, vector<string> params) : bb(bb_), op(op), params(params){};
 
 	/** Actual code generation */
 	void gen_asm(ostream &o); /**< x86 assembly code generation for this IR instruction */
+	vector<std::string> *get_params() { return &params; }
+	Operation getOp() { return op; }
 
 private:
 	BasicBlock *bb; /**< The BB this instruction belongs to, which provides a pointer to the CFG this instruction belong to */
@@ -80,11 +94,13 @@ Possible optimization:
 class BasicBlock
 {
 public:
-	BasicBlock(CFG *cfg, string entry_label);
-	void gen_asm(ostream &o); /**< x86 assembly code generation for this basic block (very simple) */
+	BasicBlock(CFG *cfg, string entry_label, std::string test_var = "");
+	void gen_asm(ostream &o);
+	/**< x86 assembly code generation for this basic block (very simple) */
 
 	// void add_IRInstr(IRInstr::Operation op, Type t, vector<string> params); --OLD
 	void add_IRInstr(IRInstr::Operation op, vector<string> params);
+	void add_IRInstr(IRInstr::Operation op, string param);
 
 	// No encapsulation whatsoever here. Feel free to do better.
 	BasicBlock *exit_true;	  /**< default pointer to the next basic block, true branch. If nullptr, return from procedure */
@@ -110,41 +126,74 @@ class CFG
 {
 public:
 	// CFG(DefFonction* ast); --OLD
-	CFG() : localSymbolTable(std::cout, std::cerr){
-		this->bbs = vector<BasicBlock*>();
+	CFG(std::string name) : localSymbolTable(std::cout, std::cerr), bbs(), name(name)
+	{
+		this->nextBBnumber = 0;
 		this->current_bb = nullptr;
-		this->add_bb(new BasicBlock(this, "prolog"));
-		this->add_bb(new BasicBlock(this, "epilog"));
+		this->add_bb(new BasicBlock(this, "." + this->name + "_p"));
+		this->add_bb(new BasicBlock(this, "." + this->name + "_e"));
+		this->add_bb(new BasicBlock(this, new_BB_name()));
+		this->bbs[0]->exit_true = this->bbs[2];
+		this->bbs[2]->exit_true = this->bbs[1];
+		this->current_bb = this->bbs[2];
 	};
 
 	// DefFonction *ast; /**< The AST this CFG comes from */
 
-	void add_bb(BasicBlock *bb);
+	void add_bb(BasicBlock *bb, bool cond = true);
 
 	// x86 code generation: could be encapsulated in a processor class in a retargetable compiler
-	void gen_asm(ostream &o);
-	string IR_reg_to_asm(string reg); /**< helper method: inputs a IR reg or input variable, returns e.g. "-24(%rbp)" for the proper value of 24 */
-	void gen_asm_prologue(ostream &o);
-	void gen_asm_epilogue(ostream &o);
+	void gen_asm(ostream &o)
+	{
 
+		this->gen_prolog(o);
+		for (int i = 0; i < this->bbs.size(); i++)
+		{
+			auto bb = this->bbs[i];
+			if (i >= 2)
+			{
+				bb->gen_asm(o);
+			}
+		}
+		this->gen_epilog(o);
+	}
+	string IR_reg_to_asm(string reg); /**< helper method: inputs a IR reg or input variable, returns e.g. "-24(%rbp)" for the proper value of 24 */
+	SymbolTable *getST() { return &this->localSymbolTable; }
+	std::string getName() { return this->name; }
+	std::vector<BasicBlock *> *getBbs() { return &this->bbs; }
 	// symbol table methods
 	// void add_to_symbol_table(string name, Type t);
 	// string create_new_tempvar(Type t);
-	// int get_var_index(string name);
+	size_t get_var_off(string name)
+	{
+
+		return this->localSymbolTable.getOffset(name, true);
+	}
 	// Type get_var_type(string name);
 
 	// basic block management
-	string new_BB_name();
+	string new_BB_name() { return "." + name + "_" + std::to_string(nextBBnumber++); }
 	BasicBlock *current_bb;
+<<<<<<< HEAD
 	SymbolTable localSymbolTable;
+=======
+	void gen_prolog(ostream &o)
+	{
+		o << this->name << ":\n	pushq %rbp\n	movq %rsp, %rbp\n";
+	}
+
+	void gen_epilog(ostream &o)
+	{
+		o << "." + this->name + "_e:\n"
+		  << "\tpopq %rbp\n	ret\n";
+	}
+>>>>>>> while
 
 protected:
 	// map <string, Type> SymbolType; /**< part of the symbol table  */
 	// map <string, int> SymbolIndex; /**< part of the symbol table  */
 	// int nextFreeSymbolIndex; /**< to allocate new symbols in the symbol table */
 	int nextBBnumber; /**< just for naming */
-
+	std::string name;
 	vector<BasicBlock *> bbs; /**< all the basic blocks of this CFG*/
 };
-
-#endif
