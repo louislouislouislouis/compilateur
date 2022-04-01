@@ -136,9 +136,9 @@ public:
 	// basic block management
 	string new_BB_name();
 	BasicBlock *current_bb;
+	SymbolTable localSymbolTable;
 
 protected:
-	SymbolTable localSymbolTable;
 	// map <string, Type> SymbolType; /**< part of the symbol table  */
 	// map <string, int> SymbolIndex; /**< part of the symbol table  */
 	// int nextFreeSymbolIndex; /**< to allocate new symbols in the symbol table */
