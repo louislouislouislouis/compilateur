@@ -17,7 +17,7 @@ antlrcpp::Any IRGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 	// Check for unused variables
 	current_cfg()->getST()->checkUse();
 
-	return 0;
+	return nullptr;
 }
 
 antlrcpp::Any IRGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
@@ -41,7 +41,7 @@ antlrcpp::Any IRGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
 		// current_cfg()->getST()->clearTemp();
 	}
 
-	return 0;
+	return nullptr;
 }
 
 antlrcpp::Any IRGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
@@ -229,6 +229,64 @@ ArithmeticNode<int> *IRGenVisitor::binaryOp(ArithmeticNode<int> *left, Arithmeti
 
 	// Return the BinaryNode
 	return node;
+}
+
+antlrcpp::Any IRGenVisitor::visitLoopW(ifccParser::LoopWContext *ctx)
+{
+	std::string cmp_name = "*" + std::to_string(this->current_cfg()->getBbs()->size());
+	this->current_cfg()->getST()->addTemp(cmp_name, "int");
+	auto conditionBlock = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name(), cmp_name);
+
+	this->current_cfg()->add_bb(conditionBlock, true);
+	this->current_cfg()->current_bb = conditionBlock;
+
+	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode<int> *>();
+	node->generate(this->current_cfg(), cmp_name);
+
+	auto body = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+	this->current_cfg()->add_bb(body, true);
+
+	auto next = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+	this->current_cfg()->add_bb(next, false);
+
+	this->current_cfg()->current_bb = body;
+	for (auto expr : ctx->expr())
+	{
+		visit(expr);
+	}
+	body->exit_true = conditionBlock;
+	this->current_cfg()->current_bb = next;
+
+	return nullptr;
+}
+
+antlrcpp::Any IRGenVisitor::visitConditionnal(ifccParser::ConditionnalContext *ctx)
+{
+	std::string cmp_name = "*" + std::to_string(this->current_cfg()->getBbs()->size());
+	this->current_cfg()->getST()->addTemp(cmp_name, "int");
+	auto conditionBlock = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name(), cmp_name);
+
+	this->current_cfg()->add_bb(conditionBlock, true);
+	this->current_cfg()->current_bb = conditionBlock;
+
+	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode<int> *>();
+	node->generate(this->current_cfg(), cmp_name);
+
+	auto body = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+	this->current_cfg()->add_bb(body, true);
+
+	auto next = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+	this->current_cfg()->add_bb(next, false);
+
+	this->current_cfg()->current_bb = body;
+	for (auto expr : ctx->expr())
+	{
+		visit(expr);
+	}
+	body->exit_true = next;
+	this->current_cfg()->current_bb = next;
+
+	return nullptr;
 }
 
 /*

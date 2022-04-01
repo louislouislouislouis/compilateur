@@ -164,10 +164,9 @@ public:
 	// symbol table methods
 	// void add_to_symbol_table(string name, Type t);
 	// string create_new_tempvar(Type t);
-	size_t get_var_off(string name)
+	std::string get_var_off(string name)
 	{
-
-		return this->localSymbolTable.getOffset(name, true);
+		return std::to_string(this->localSymbolTable.getOffset(name, true));
 	}
 	// Type get_var_type(string name);
 
