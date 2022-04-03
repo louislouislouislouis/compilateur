@@ -262,6 +262,7 @@ antlrcpp::Any IRGenVisitor::visitLoopW(ifccParser::LoopWContext *ctx)
 
 antlrcpp::Any IRGenVisitor::visitConditionnal(ifccParser::ConditionnalContext *ctx)
 {
+
 	std::string cmp_name = "*" + std::to_string(this->current_cfg()->getBbs()->size());
 	this->current_cfg()->getST()->addTemp(cmp_name, "int");
 	auto conditionBlock = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name(), cmp_name);
@@ -272,18 +273,27 @@ antlrcpp::Any IRGenVisitor::visitConditionnal(ifccParser::ConditionnalContext *c
 	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode<int> *>();
 	node->generate(this->current_cfg(), cmp_name);
 
-	auto body = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
-	this->current_cfg()->add_bb(body, true);
+	auto thenB = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+	this->current_cfg()->add_bb(thenB, true);
+
+	BasicBlock *elseB;
+	if (ctx->elseexpr() != nullptr)
+	{
+		elseB = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+		this->current_cfg()->add_bb(elseB, false);
+		this->current_cfg()->current_bb = elseB;
+		visit(ctx->elseexpr());
+	}
+
+	this->current_cfg()->current_bb = thenB;
+	visit(ctx->ifexpr());
 
 	auto next = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
-	this->current_cfg()->add_bb(next, false);
-
-	this->current_cfg()->current_bb = body;
-	for (auto expr : ctx->expr())
-	{
-		visit(expr);
-	}
-	body->exit_true = next;
+	this->current_cfg()->add_bb(next, true);
+	if (ctx->elseexpr() != nullptr)
+		elseB->exit_true = next;
+	else
+		conditionBlock->exit_false = next;
 	this->current_cfg()->current_bb = next;
 
 	return nullptr;

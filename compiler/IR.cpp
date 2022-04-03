@@ -21,6 +21,8 @@ BasicBlock::BasicBlock(CFG *cfg, string entry_label, std::string test_var)
     this->cfg = cfg;
     this->label = entry_label;
     this->test_var_name = test_var;
+    this->exit_true = nullptr;
+    this->exit_false = nullptr;
 }
 void BasicBlock::gen_asm(ostream &o)
 {
@@ -56,27 +58,13 @@ void BasicBlock::add_IRInstr(IRInstr::Operation op, std::vector<std::string> par
 
 void IRInstr::gen_asm(ostream &o)
 {
-    std::string left = "", right = "";
-    switch (op)
+    std::string left = "", right = "", dest = "-" + this->bb->cfg->get_var_off(this->params[0]) + "(%rbp)";
+    if (params.size() == 3)
     {
-    case ldconst:
-        // C: var = const
-        // params[0] = var
-        // params[1] = const
-        o << "\tmovl \t$" << params[1] << ", -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-        break;
-    case copy:
-        // C: var1 = var2
-        // params[0] = var1
-        // params[1] = var2
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
-        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-        break;
-    case add:
         if (params[1][0] == '$')
         {
-            left = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
-            right = params[1];
+            left = params[1];
+            right = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
         }
         else if (params[2][0] == '$')
         {
@@ -88,28 +76,108 @@ void IRInstr::gen_asm(ostream &o)
             left = "-" + this->bb->cfg->get_var_off(params[1]) + "(%rbp)";
             right = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
         }
+    }
+
+    auto comp = [&](std::string op)
+    {
+        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\tcmpl \t" << right << ", %eax" << endl;
+        o << "\tset" << op << " \t%al" << endl;
+        o << "\tmovzbl \t%al, %eax" << endl;
+        o << "\tmovl \t%eax, " << dest << endl;
+    };
+
+    auto bit = [&](std::string op)
+    {
+        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\t" << op << "l \t" << right << ", %eax" << endl;
+        o << "\tmovl \t%eax, " << dest << endl;
+    };
+
+    switch (op)
+    {
+    case ldconst:
+        // C: var = const
+        // params[0] = var
+        // params[1] = const
+        o << "\tmovl \t$" << params[1] << ", " << dest << endl;
+        break;
+    case copy:
+        // C: var1 = var2
+        // params[0] = var1
+        // params[1] = var2
+        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\tmovl \t%eax,  " << dest << endl;
+        break;
+    case add:
+
         o << "\tmovl \t" << left << ", %eax" << endl;
         o << "\taddl \t" << right << ", %eax" << endl;
 
-        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        o << "\tmovl \t%eax, " << dest << endl;
         break;
     case sub:
         // C: var1 = var2 - var3
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
-        o << "\tsubl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
-        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\tsubl \t" << right << ", %eax" << endl;
+
+        o << "\tmovl \t%eax, " << dest << endl;
         break;
     case mul:
         // C: var1 = var2 * var3
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
-        o << "\timull \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
-        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\timull \t" << right << ", %eax" << endl;
+
+        o << "\tmovl \t%eax, " << dest << endl;
+        break;
+    case neg:
+
+        o << "\tnegl\t " << dest << std::endl;
+        break;
+    case not_:
+        o << "	cmpl	$0, " << dest << std::endl;
+        o << "	sete	%al\n";
+        o << "	movzbl	%al, %eax\n";
+
+        o << "	movl	%eax, " << dest << std::endl;
+        break;
+    case ret:
+        o << "\tmovl \t " << dest << ", %eax" << endl;
+        break;
+    case div:
+
+        o << "\tmovl \t" << left << ", %eax" << std::endl;
+        o << "\tcltd" << std::endl;
+        if (right[0] == '$')
+        {
+            o << "\tmovl \t" << right << ", %ecx" << std::endl;
+            right = "%ecx";
+        }
+
+        o << "\tidivl\t" << right << std::endl;
+
+        o << "\tmovl\t %eax, " << dest << std::endl;
+
+        break;
+    case mod:
+        o << "\tmovl \t" << left << ", %eax" << std::endl;
+        o << "\tcltd" << std::endl;
+        if (right[0] == '$')
+        {
+            o << "\tmovl \t" << right << ", %ecx" << std::endl;
+            right = "%ecx";
+        }
+
+        o << "\tidivl\t" << right << std::endl;
+
+        o << "\tmovl\t %edx, " << dest << std::endl;
+
         break;
     case eq:
         // var2 == var3 ?
@@ -117,10 +185,13 @@ void IRInstr::gen_asm(ostream &o)
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
-        o << "\tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
-        o << "\tsete \t%al" << endl;
-        o << " \tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        comp("e");
+        break;
+    case neq:
+        comp("ne");
+        break;
+    case lt:
+        comp("l");
         break;
     case leq:
         // var2 <= var3 ?
@@ -128,38 +199,31 @@ void IRInstr::gen_asm(ostream &o)
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
-        o << " \tcmpl \t" << " -" << this->bb->cfg->get_var_off(params[2]) << "(%rbp), %eax" << endl;
-        o << "\tsetle \t%al" << endl;
-        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
+        comp("le");
         break;
-    case ret:
-
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[0]) << "(%rbp), %eax" << endl;
+    case gt:
+        comp("g");
         break;
-    case lt:
-
-        if (params[1][0] == '$')
-        {
-            left = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
-            right = params[1];
-        }
-        else if (params[2][0] == '$')
-        {
-            left = "-" + this->bb->cfg->get_var_off(params[1]) + "(%rbp)";
-            right = params[2];
-        }
-        else
-        {
-            left = "-" + this->bb->cfg->get_var_off(params[1]) + "(%rbp)";
-            right = "-" + this->bb->cfg->get_var_off(params[2]) + "(%rbp)";
-        }
-        o << "\tmovl \t" << left << ", %eax" << endl;
-        o << "\tcmpl \t" << right << ", %eax" << endl;
-        o << "\tsetl \t%al" << endl;
-        o << "\tmovzbl \t%al, %eax" << endl;
-        o << "\tmovl \t%eax, -" << this->bb->cfg->get_var_off(params[0]) << "(%rbp)" << endl;
-
+    case geq:
+        comp("ge");
+        break;
+    case and_:
+        // TODO: implement
+        break;
+    case or_:
+        // TODO: implement
+        break;
+    case band:
+        bit("and");
+        break;
+    case bor:
+        bit("or");
+        break;
+    case bxor:
+        bit("xor");
+        break;
+    case bnot:
+        bit("not");
         break;
     default:
         break;

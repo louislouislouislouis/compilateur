@@ -145,8 +145,9 @@ public:
 			return -ArithmeticNode<T>::left->eval();
 		else if (op == "!")
 			return !ArithmeticNode<T>::left->eval();
-		else
-			return T();
+		else if (op == "~")
+			return ~ArithmeticNode<T>::left->eval();
+		return T();
 	}
 	void generate(CFG *cfg, std::string dest) const override
 	{
@@ -165,7 +166,7 @@ public:
 		else if (op == "!")
 		{
 
-			ArithmeticNode<T>::left->generate(cfg, "%eax");
+			ArithmeticNode<T>::left->generate(cfg, dest);
 			cfg->current_bb->add_IRInstr(IRInstr::Operation::not_, dest);
 			// o << "	cmpl	$0, %eax" << std::endl;
 			// o << "	sete	%al\n";
@@ -174,6 +175,16 @@ public:
 			// {
 			// 	o << "	movl	%eax, " << sDest << std::endl;
 			// }
+		}
+		else if (op == "~")
+		{
+			ArithmeticNode<T>::left->generate(cfg, dest);
+			cfg->current_bb->add_IRInstr(IRInstr::Operation::bnot, dest);
+			// o << "	notl	" << sDest << std::endl;
+		}
+		else
+		{
+			std::cout << "Unary operator not supported" << std::endl;
 		}
 	}
 	UnaryNode(std::string op, ArithmeticNode<T> *o) : ArithmeticNode<int>(o, nullptr), op(op){};
@@ -222,6 +233,7 @@ public:
 			return l | r;
 		else if (op == "^")
 			return l ^ r;
+
 		else
 			return T();
 	}

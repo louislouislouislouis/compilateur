@@ -21,21 +21,22 @@ type: 'int';
 
 inlineArithmetic: arithmetic;
 arithmetic:
-	op = ('-' | '+' | '!') arithmetic						# unary
-	| arithmetic op = ('*' | '/' | '%') arithmetic			# muldiv
-	| arithmetic op = ('+' | '-') arithmetic				# addminus
-	| arithmetic op = ('<=' | '>=' | '<' | '>') arithmetic	# comprel
-	| arithmetic op = ('==' | '!=') arithmetic				# compeq
-	| arithmetic op = ('&&' | '||') arithmetic				# oplog
-	| arithmetic op = ('&' | '^' | '|') arithmetic			# bitwise
-	| '(' arithmetic ')'									# par
-	| CONST													# const
-	| ID													# id;
+	op = ('-' | '+' | '!' | '~') arithmetic							# unary
+	| arithmetic op = ('*' | '/' | '%') arithmetic					# muldiv
+	| arithmetic op = ('+' | '-') arithmetic						# addminus
+	| arithmetic op = ('<=' | '>=' | '<' | '>') arithmetic			# comprel
+	| arithmetic op = ('==' | '!=') arithmetic						# compeq
+	| arithmetic op = ('&&' | '||') arithmetic						# oplog
+	| arithmetic op = ('&' | '^' | '|' | '<<' | '>>') arithmetic	# bitwise
+	| '(' arithmetic ')'											# par
+	| CONST															# const
+	| ID															# id;
 
 conditionnal:
-	'if' '(' inlineArithmetic ')' (expr | '{' expr+ '}') (
-		'else' (conditionnal | expr | '{' expr+ '}')
-	)?;
+	'if' '(' inlineArithmetic ')' ifexpr ('else' elseexpr)?;
+
+ifexpr: expr | '{' expr+ '}';
+elseexpr: conditionnal | expr | '{' expr+ '}';
 
 loopW: 'while' '(' inlineArithmetic ')' (expr | '{' expr+ '}');
 
