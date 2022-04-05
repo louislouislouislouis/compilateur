@@ -38,6 +38,7 @@ public:
 	virtual antlrcpp::Any visitUnary(ifccParser::UnaryContext *ctx) override;
 	virtual antlrcpp::Any visitComprel(ifccParser::ComprelContext *ctx) override;
 	virtual antlrcpp::Any visitCompeq(ifccParser::CompeqContext *ctx) override;
+	virtual antlrcpp::Any visitShift(ifccParser::ShiftContext *ctx) override;
 	virtual antlrcpp::Any visitOplog(ifccParser::OplogContext *ctx) override;
 	virtual antlrcpp::Any visitId(ifccParser::IdContext *ctx) override;
 	virtual antlrcpp::Any visitRet(ifccParser::RetContext *ctx) override;

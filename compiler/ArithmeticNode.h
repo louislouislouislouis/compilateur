@@ -253,6 +253,8 @@ public:
 			{"!=", IRInstr::Operation::neq},
 			{"<=", IRInstr::Operation::leq},
 			{">=", IRInstr::Operation::geq},
+			{"<<", IRInstr::Operation::shiftL},
+			{">>", IRInstr::Operation::shiftR},
 			{"&&", IRInstr::Operation::and_},
 			{"||", IRInstr::Operation::or_},
 			{"&", IRInstr::Operation::band},
@@ -295,6 +297,11 @@ public:
 				lName,
 				"int");
 			this->left->generate(cfg, lName);
+		}
+		if (operation == IRInstr::Operation::shiftL || operation == IRInstr::Operation::shiftR) {
+			cerr<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<endl;
+			cerr<<dest<<" "<<lName<<" "<<rName<<endl;
+			cerr<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<endl;
 		}
 
 		cfg->current_bb->add_IRInstr(operation, {dest, lName, rName});
