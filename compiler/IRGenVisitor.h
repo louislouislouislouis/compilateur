@@ -46,7 +46,7 @@ public:
 	virtual antlrcpp::Any visitConditionnal(ifccParser::ConditionnalContext *ctx) override;
 	bool genCode(InstructionSet instructionSet);
 
-	ArithmeticNode<int> *binaryOp(ArithmeticNode<int> *left, ArithmeticNode<int> *right, std::string op);
+	ArithmeticNode *binaryOp(ArithmeticNode *left, ArithmeticNode *right, std::string op);
 	~IRGenVisitor()
 	{
 		for (auto cfg : functions)

@@ -8,7 +8,7 @@ SymbolTable::SymbolTable(std::ostream &_out, std::ostream &_err) : out(_out),
     posMap = new std::map<std::string, pos>();
     usedMap = new std::map<std::string, int>();
     tempIds = new std::vector<std::string>();
-
+    sizeMap=new std::map<std::string,uint>();
     // Initialize variables
     offset = 0;
 }
@@ -20,6 +20,7 @@ SymbolTable::~SymbolTable()
     delete posMap;
     delete usedMap;
     delete tempIds;
+    delete sizeMap;
 }
 
 size_t SymbolTable::add(std::string id, std::string type, pos pos)
@@ -45,7 +46,7 @@ size_t SymbolTable::add(std::string id, std::string type, pos pos)
     // Add relevant data to the maps
     posMap->emplace(id, pos);
     usedMap->emplace(id, 0);
-
+    sizeMap->emplace(id,size);
     // Return the offset
     return offset;
 }
@@ -125,4 +126,9 @@ void SymbolTable::checkInit(std::string id)
         err << "Error: " << id << " not initialized" << std::endl;
         exit(1);
     }
+}
+uint SymbolTable::getSize(std::string id){
+    // Check if the variable is declared
+    checkVar(id);
+    return sizeMap->at(id);
 }

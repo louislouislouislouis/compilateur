@@ -21,13 +21,29 @@ enum class Type
  * It contains a type, two children, and can be evaluated.
  * It is used to generate optimized code.
  */
-template <typename T>
 class ArithmeticNode
 {
 protected:
 	// Left and right children
-	ArithmeticNode<T> *left;
-	ArithmeticNode<T> *right;
+	ArithmeticNode *left;
+	ArithmeticNode *right;
+	uint size;
+	long cast (long val) const
+	{
+		//std::cout<<"size="<<size<<" val="<<val<<"\n";
+		if (size == 1)
+		{
+			return (char)val;
+		}
+		else if (size == 4)
+		{
+			return (int)val;
+		}
+		else
+		{
+			return val;
+		}
+	}
 
 	// Helper functions
 	static std::string ptos(const void *p)
@@ -44,8 +60,8 @@ protected:
 	}
 
 public:
-	ArithmeticNode(ArithmeticNode<T> *l, ArithmeticNode<T> *r) : left(l), right(r){};
-	ArithmeticNode() : left(nullptr), right(nullptr){};
+	ArithmeticNode(ArithmeticNode *l, ArithmeticNode *r,uint sizeP) : left(l), right(r),size(sizeP){};
+	ArithmeticNode() : left(nullptr), right(nullptr),size(0){};
 	~ArithmeticNode()
 	{
 		if (left != nullptr)
@@ -69,7 +85,7 @@ public:
 	 * Evaluates the node and returns the result
 	 * Result is meaningful only if the node is of type CONST
 	 */
-	virtual T eval() const { return T(); };
+	virtual long eval() const { return 0; };
 
 	/*
 	 * Writes the code for the node to the output stream
@@ -80,28 +96,26 @@ public:
 	virtual void generate(CFG *cfg, std::string dest) const {};
 };
 
-template <typename T>
-class ConstNode : public ArithmeticNode<T>
+class ConstNode : public ArithmeticNode
 {
 
 private:
-	T value;
+	long value;
 
 public:
-	T eval() const override { return value; }
+	long eval() const override { return cast(value); }
 	void generate(CFG *cfg, std::string dest) const override
 	{
 
 		// std::string sDest = dest[0] == '%' ? dest : this->oftos(cfg->getST()->getOffset(dest, true));
 
 		// o << "	movl	$" << value << ", " << sDest << std::endl;
-		cfg->current_bb->add_IRInstr(IRInstr::Operation::ldconst, std::vector{dest, std::to_string(value)});
+		cfg->current_bb->add_IRInstr(IRInstr::Operation::ldconst, std::vector<std::string>{dest, std::to_string(value)});
 	}
-	ConstNode(T v) : value(v){};
+	ConstNode(long v) : value(v){};
 };
 
-template <typename T>
-class VarNode : public ArithmeticNode<T>
+class VarNode : public ArithmeticNode
 {
 private:
 	std::string name;
@@ -130,24 +144,23 @@ public:
 	VarNode(std::string n) : name(n){};
 };
 
-template <typename T>
-class UnaryNode : public ArithmeticNode<T>
+class UnaryNode : public ArithmeticNode
 {
 private:
 	std::string op;
 
 public:
-	T eval() const override
+	long eval() const override
 	{
 		if (op == "+")
-			return ArithmeticNode<T>::left->eval();
+			return cast(ArithmeticNode::left->eval());
 		else if (op == "-")
-			return -ArithmeticNode<T>::left->eval();
+			return cast(-ArithmeticNode::left->eval());
 		else if (op == "!")
-			return !ArithmeticNode<T>::left->eval();
+			return cast(!ArithmeticNode::left->eval());
 		else if (op == "~")
-			return ~ArithmeticNode<T>::left->eval();
-		return T();
+			return cast(~ArithmeticNode::left->eval());
+		return 0;
 	}
 	void generate(CFG *cfg, std::string dest) const override
 	{
@@ -155,18 +168,18 @@ public:
 
 		if (op == "+")
 		{
-			ArithmeticNode<T>::left->generate(cfg, dest);
+			ArithmeticNode::left->generate(cfg, dest);
 		}
 		else if (op == "-")
 		{
-			ArithmeticNode<T>::left->generate(cfg, dest);
+			ArithmeticNode::left->generate(cfg, dest);
 			cfg->current_bb->add_IRInstr(IRInstr::Operation::neg, dest);
 			// o << "	negl	" << sDest << std::endl;
 		}
 		else if (op == "!")
 		{
 
-			ArithmeticNode<T>::left->generate(cfg, dest);
+			ArithmeticNode::left->generate(cfg, dest);
 			cfg->current_bb->add_IRInstr(IRInstr::Operation::not_, dest);
 			// o << "	cmpl	$0, %eax" << std::endl;
 			// o << "	sete	%al\n";
@@ -178,7 +191,7 @@ public:
 		}
 		else if (op == "~")
 		{
-			ArithmeticNode<T>::left->generate(cfg, dest);
+			ArithmeticNode::left->generate(cfg, dest);
 			cfg->current_bb->add_IRInstr(IRInstr::Operation::bnot, dest);
 			// o << "	notl	" << sDest << std::endl;
 		}
@@ -187,55 +200,54 @@ public:
 			std::cout << "Unary operator not supported" << std::endl;
 		}
 	}
-	UnaryNode(std::string op, ArithmeticNode<T> *o) : ArithmeticNode<int>(o, nullptr), op(op){};
+	UnaryNode(std::string op, ArithmeticNode *o) : ArithmeticNode(o, nullptr,size), op(op){};
 };
 
-template <typename T>
-class BinaryNode : public ArithmeticNode<T>
+class BinaryNode : public ArithmeticNode
 {
 private:
 	std::string op;
 
 public:
-	T eval() const override
+	long eval() const override
 	{
-		T l = ArithmeticNode<T>::left->eval(), r = ArithmeticNode<T>::right->eval();
+		long l = ArithmeticNode::left->eval(), r = ArithmeticNode::right->eval();
 
 		if (op == "+")
-			return l + r;
+			return cast(l + r);
 		else if (op == "-")
-			return l - r;
+			return cast(l - r);
 		else if (op == "*")
-			return l * r;
+			return cast(l * r);
 		else if (op == "/")
-			return l / r;
+			return cast(l / r);
 		else if (op == "%")
-			return l % r;
+			return cast(l % r);
 		else if (op == "<")
-			return l < r;
+			return cast(l < r);
 		else if (op == ">")
-			return l > r;
+			return cast(l > r);
 		else if (op == "==")
-			return l == r;
+			return cast(l == r);
 		else if (op == "!=")
-			return l != r;
+			return cast(l != r);
 		else if (op == "<=")
-			return l <= r;
+			return cast(l <= r);
 		else if (op == ">=")
-			return l >= r;
+			return cast(l >= r);
 		else if (op == "&&")
-			return l && r;
+			return cast(l && r);
 		else if (op == "||")
-			return l || r;
+			return cast(l || r);
 		else if (op == "&")
-			return l & r;
+			return cast(l & r);
 		else if (op == "|")
-			return l | r;
+			return cast(l | r);
 		else if (op == "^")
-			return l ^ r;
+			return cast(l ^ r);
 
 		else
-			return T();
+			return 0;
 	}
 	void generate(CFG *cfg, std::string dest) const override
 	{
@@ -267,7 +279,7 @@ public:
 		// std::cerr << "BinaryNode::generate-> " << op << " " << (int)this->right->type() << std::endl;
 		if (this->right->type() == Type::VAR)
 		{
-			rName = dynamic_cast<VarNode<int> *>(this->right)->getName();
+			rName = dynamic_cast<VarNode *>(this->right)->getName();
 		}
 		else if (this->right->type() == Type::CONST)
 		{
@@ -284,7 +296,7 @@ public:
 
 		if (this->left->type() == Type::VAR)
 		{
-			lName = dynamic_cast<VarNode<int> *>(this->left)->getName();
+			lName = dynamic_cast<VarNode *>(this->left)->getName();
 		}
 		else if (this->left->type() == Type::CONST)
 		{
@@ -359,5 +371,5 @@ public:
 		// }
 	}
 
-	BinaryNode(std::string o, ArithmeticNode<T> *l, ArithmeticNode<T> *r) : ArithmeticNode<int>(l, r), op(o){};
+	BinaryNode(std::string o, ArithmeticNode *l, ArithmeticNode *r) : ArithmeticNode(l, r, size), op(o){};
 };

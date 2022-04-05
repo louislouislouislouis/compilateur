@@ -40,7 +40,7 @@ void BasicBlock::gen_asm(ostream &o)
     }
     else
     {
-        o << "\tcmpl\t$1,-" << this->cfg->get_var_off(test_var_name) << "(%rbp) " << std::endl;
+        o << "\tcmpb\t$1,-" << this->cfg->get_var_off(test_var_name) << "(%rbp) " << std::endl;
         o << "\tjne\t" << exit_false->label << std::endl;
         o << "\tjmp\t" << exit_true->label << std::endl;
     }
@@ -58,6 +58,12 @@ void BasicBlock::add_IRInstr(IRInstr::Operation op, std::vector<std::string> par
 
 void IRInstr::gen_asm(ostream &o)
 {
+    std::map<uint, char> typeSize = {
+        {4, 'l'},
+        {2, 'w'},
+        {1, 'b'},
+        {8, 'q'}};
+    char suffix = typeSize[this->bb->cfg->getST()->getSize(this->params[0])];
     std::string left = "", right = "", dest = "-" + this->bb->cfg->get_var_off(this->params[0]) + "(%rbp)";
     if (params.size() == 3)
     {
@@ -80,18 +86,18 @@ void IRInstr::gen_asm(ostream &o)
 
     auto comp = [&](std::string op)
     {
-        o << "\tmovl \t" << left << ", %eax" << endl;
-        o << "\tcmpl \t" << right << ", %eax" << endl;
+        o << "\tmov"<<suffix<<" \t" << left << ", %eax" << endl;
+        o << "\tcmp"<<suffix<<" \t" << right << ", %eax" << endl;
         o << "\tset" << op << " \t%al" << endl;
-        o << "\tmovzbl \t%al, %eax" << endl;
-        o << "\tmovl \t%eax, " << dest << endl;
+        o << "\tmovzb"<<suffix<<" \t%al, %eax" << endl;
+        o << "\tmov"<<suffix<<" \t%eax, " << dest << endl;
     };
 
     auto bit = [&](std::string op)
     {
-        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\tmov"<<suffix<<" \t" << left << ", %eax" << endl;
         o << "\t" << op << "l \t" << right << ", %eax" << endl;
-        o << "\tmovl \t%eax, " << dest << endl;
+        o << "\tmov"<<suffix<<" \t%eax, " << dest << endl;
     };
 
     switch (op)
@@ -100,83 +106,83 @@ void IRInstr::gen_asm(ostream &o)
         // C: var = const
         // params[0] = var
         // params[1] = const
-        o << "\tmovl \t$" << params[1] << ", " << dest << endl;
+        o << "\tmov"<<suffix<<" \t$" << params[1] << ", " << dest << endl;
         break;
     case copy:
         // C: var1 = var2
         // params[0] = var1
         // params[1] = var2
-        o << "\tmovl \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
-        o << "\tmovl \t%eax,  " << dest << endl;
+        o << "\tmov"<<suffix<<" \t-" << this->bb->cfg->get_var_off(params[1]) << "(%rbp), %eax" << endl;
+        o << "\tmov"<<suffix<<" \t%eax,  " << dest << endl;
         break;
     case add:
 
-        o << "\tmovl \t" << left << ", %eax" << endl;
-        o << "\taddl \t" << right << ", %eax" << endl;
+        o << "\tmov"<<suffix<<" \t" << left << ", %eax" << endl;
+        o << "\tadd"<<suffix<<" \t" << right << ", %eax" << endl;
 
-        o << "\tmovl \t%eax, " << dest << endl;
+        o << "\tmov"<<suffix<<" \t%eax, " << dest << endl;
         break;
     case sub:
         // C: var1 = var2 - var3
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << "\tmovl \t" << left << ", %eax" << endl;
-        o << "\tsubl \t" << right << ", %eax" << endl;
+        o << "\tmov"<<suffix<<" \t" << left << ", %eax" << endl;
+        o << "\tsub"<<suffix<<" \t" << right << ", %eax" << endl;
 
-        o << "\tmovl \t%eax, " << dest << endl;
+        o << "\tmov"<<suffix<<" \t%eax, " << dest << endl;
         break;
     case mul:
         // C: var1 = var2 * var3
         // params[0] = var1
         // params[1] = var2
         // params[2] = var3
-        o << "\tmovl \t" << left << ", %eax" << endl;
-        o << "\timull \t" << right << ", %eax" << endl;
+        o << "\tmov"<<suffix<<" \t" << left << ", %eax" << endl;
+        o << "\timul"<<suffix<<" \t" << right << ", %eax" << endl;
 
-        o << "\tmovl \t%eax, " << dest << endl;
+        o << "\tmov"<<suffix<<" \t%eax, " << dest << endl;
         break;
     case neg:
 
-        o << "\tnegl\t " << dest << std::endl;
+        o << "\tneg"<<suffix<<"\t " << dest << std::endl;
         break;
     case not_:
-        o << "	cmpl	$0, " << dest << std::endl;
+        o << "	cmp"<<suffix<<"	$0, " << dest << std::endl;
         o << "	sete	%al\n";
-        o << "	movzbl	%al, %eax\n";
+        o << "	movzb"<<suffix<<"	%al, %eax\n";
 
-        o << "	movl	%eax, " << dest << std::endl;
-        break;  
+        o << "	mov"<<suffix<<"	%eax, " << dest << std::endl;
+        break;
     case ret:
-        o << "\tmovl \t " << dest << ", %eax" << endl;
+        o << "\tmov"<<suffix<<" \t " << dest << ", %eax" << endl;
         break;
     case div:
 
-        o << "\tmovl \t" << left << ", %eax" << std::endl;
+        o << "\tmov"<<suffix<<" \t" << left << ", %eax" << std::endl;
         o << "\tcltd" << std::endl;
         if (right[0] == '$')
         {
-            o << "\tmovl \t" << right << ", %ecx" << std::endl;
+            o << "\tmov"<<suffix<<" \t" << right << ", %ecx" << std::endl;
             right = "%ecx";
         }
 
-        o << "\tidivl\t" << right << std::endl;
+        o << "\tidiv"<<suffix<<"\t" << right << std::endl;
 
-        o << "\tmovl\t %eax, " << dest << std::endl;
+        o << "\tmov"<<suffix<<"\t %eax, " << dest << std::endl;
 
         break;
     case mod:
-        o << "\tmovl \t" << left << ", %eax" << std::endl;
+        o << "\tmov"<<suffix<<" \t" << left << ", %eax" << std::endl;
         o << "\tcltd" << std::endl;
         if (right[0] == '$')
         {
-            o << "\tmovl \t" << right << ", %ecx" << std::endl;
+            o << "\tmov"<<suffix<<" \t" << right << ", %ecx" << std::endl;
             right = "%ecx";
         }
 
-        o << "\tidivl\t" << right << std::endl;
+        o << "\tidiv"<<suffix<<"\t" << right << std::endl;
 
-        o << "\tmovl\t %edx, " << dest << std::endl;
+        o << "\tmov"<<suffix<<"\t %edx, " << dest << std::endl;
 
         break;
     case eq:
@@ -235,7 +241,7 @@ void IRInstr::gen_asm(ostream &o)
         bit("xor");
         break;
     case bnot:
-        o << "\tnotl\t " << dest << std::endl;
+        o << "\tnot"<<suffix<<"\t " << dest << std::endl;
         break;
     default:
         break;

@@ -35,7 +35,7 @@ antlrcpp::Any IRGenVisitor::visitSdecl(ifccParser::SdeclContext *ctx)
 	if (ctx->rval() != nullptr)
 	{
 		// Parse the right hand side of the expression
-		auto node = visitChildren(ctx).as<ArithmeticNode<int> *>();
+		auto node = visitChildren(ctx).as<ArithmeticNode *>();
 		node->generate(current_cfg(), name);
 		// Clear temp variables
 		// current_cfg()->getST()->clearTemp();
@@ -50,7 +50,7 @@ antlrcpp::Any IRGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
 	std::string dname = ctx->ID()->getText();
 
 	// Parse the right hand side of the expression
-	auto root = visitChildren(ctx).as<ArithmeticNode<int> *>();
+	auto root = visitChildren(ctx).as<ArithmeticNode *>();
 
 	// Generate the code for the right hand side
 	root->generate(current_cfg(), dname);
@@ -61,7 +61,7 @@ antlrcpp::Any IRGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
 antlrcpp::Any IRGenVisitor::visitRet(ifccParser::RetContext *ctx)
 {
 	// Parse the return value
-	auto node = visitChildren(ctx).as<ArithmeticNode<int> *>();
+	auto node = visitChildren(ctx).as<ArithmeticNode *>();
 	current_cfg()->getST()->addTemp("rvar", "int", {ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()});
 	node->generate(current_cfg(), "rvar");
 	current_cfg()->current_bb->add_IRInstr(IRInstr::Operation::ret, "rvar");
@@ -72,7 +72,15 @@ antlrcpp::Any IRGenVisitor::visitRet(ifccParser::RetContext *ctx)
 antlrcpp::Any IRGenVisitor::visitConst(ifccParser::ConstContext *ctx)
 {
 	std::string constante = ctx->CONST()->getText();
-	ArithmeticNode<int> *node = new ConstNode<int>(std::stoi(constante));
+	ArithmeticNode *node;
+	if (constante[0] == '\'')
+	{
+		node = new ConstNode(constante[1]);
+	}
+	else
+	{
+		node = new ConstNode(std::stoi(constante));
+	}
 
 	// Return the ConstNode
 	return node;
@@ -81,10 +89,10 @@ antlrcpp::Any IRGenVisitor::visitConst(ifccParser::ConstContext *ctx)
 antlrcpp::Any IRGenVisitor::visitBitwise(ifccParser::BitwiseContext *ctx)
 {
 	// Parse the left hand side of the expression
-	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode<int> *>();
+	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode *>();
 
 	// Parse the right hand side of the expression
-	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode<int> *>();
+	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode *>();
 
 	// Return the BinaryNode
 	return binaryOp(left, right, ctx->op->getText());
@@ -97,7 +105,7 @@ antlrcpp::Any IRGenVisitor::visitId(ifccParser::IdContext *ctx)
 {
 	std::string name = ctx->ID()->getText();
 	current_cfg()->getST()->used(name);
-	ArithmeticNode<int> *node = new VarNode<int>(name);
+	ArithmeticNode *node = new VarNode(name);
 
 	// Return the VarNode
 	return node;
@@ -109,10 +117,10 @@ Called when encountering a + or -
 antlrcpp::Any IRGenVisitor::visitAddminus(ifccParser::AddminusContext *ctx)
 {
 	// Parse the left hand side of the expression
-	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode<int> *>();
+	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode *>();
 
 	// Parse the right hand side of the expression
-	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode<int> *>();
+	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode *>();
 
 	// Return the BinaryNode
 	return binaryOp(left, right, ctx->op->getText());
@@ -125,10 +133,10 @@ antlrcpp::Any IRGenVisitor::visitMuldiv(ifccParser::MuldivContext *ctx)
 {
 
 	// Parse the left hand side of the expression
-	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode<int> *>();
+	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode *>();
 
 	// Parse the right hand side of the expression
-	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode<int> *>();
+	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode *>();
 
 	// Return the BinaryNode
 	return binaryOp(left, right, ctx->op->getText());
@@ -140,7 +148,7 @@ Called when encountering parentheses
 antlrcpp::Any IRGenVisitor::visitPar(ifccParser::ParContext *ctx)
 {
 	// Return the node of the expression in the parenthesis
-	return visit(ctx->arithmetic()).as<ArithmeticNode<int> *>();
+	return visit(ctx->arithmetic()).as<ArithmeticNode *>();
 }
 
 /*
@@ -149,10 +157,10 @@ Called when encountering a unary operator (-, +, !)
 antlrcpp::Any IRGenVisitor::visitUnary(ifccParser::UnaryContext *ctx)
 {
 	// Parse the expression
-	auto *operand = visit(ctx->arithmetic()).as<ArithmeticNode<int> *>();
+	auto *operand = visit(ctx->arithmetic()).as<ArithmeticNode *>();
 
 	// Create the node
-	ArithmeticNode<int> *node = new UnaryNode<int>(ctx->op->getText(), operand);
+	ArithmeticNode *node = new UnaryNode(ctx->op->getText(), operand);
 
 	// If there are no variables in the expression, we can evaluate it
 	if (node->type() == Type::CONST)
@@ -160,8 +168,8 @@ antlrcpp::Any IRGenVisitor::visitUnary(ifccParser::UnaryContext *ctx)
 		int value = node->eval();
 		delete node;
 
-		// Return the value as a ConstNode
-		return (ArithmeticNode<int> *)new ConstNode<int>(value);
+		// Return the value as a ConstNode ,current_cfg()->getST()->getSize("char")
+		return (ArithmeticNode *)new ConstNode(value);
 	}
 
 	// Return the UnaryNode
@@ -174,10 +182,10 @@ Called when encountering a equality operator (==, !=)
 antlrcpp::Any IRGenVisitor::visitCompeq(ifccParser::CompeqContext *ctx)
 {
 	// Parse the left hand side of the expression
-	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode<int> *>();
+	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode *>();
 
 	// Parse the right hand side of the expression
-	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode<int> *>();
+	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode *>();
 
 	// Return the BinaryNode
 	return binaryOp(left, right, ctx->op->getText());
@@ -189,10 +197,10 @@ Called when encountering a relational operator (<, <=, >, >=)
 antlrcpp::Any IRGenVisitor::visitComprel(ifccParser::ComprelContext *ctx)
 {
 	// Parse the left hand side of the expression
-	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode<int> *>();
+	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode *>();
 
 	// Parse the right hand side of the expression
-	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode<int> *>();
+	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode *>();
 
 	// Return the BinaryNode
 	return binaryOp(left, right, ctx->op->getText());
@@ -219,18 +227,18 @@ Called when encountering a logical operator (&&, ||)
 antlrcpp::Any IRGenVisitor::visitOplog(ifccParser::OplogContext *ctx)
 {
 	// Parse the left hand side of the expression
-	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode<int> *>();
+	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode *>();
 
 	// Parse the right hand side of the expression
-	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode<int> *>();
+	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode *>();
 
 	// Return the BinaryNode
 	return binaryOp(left, right, ctx->op->getText());
 }
 
-ArithmeticNode<int> *IRGenVisitor::binaryOp(ArithmeticNode<int> *left, ArithmeticNode<int> *right, std::string op)
+ArithmeticNode *IRGenVisitor::binaryOp(ArithmeticNode *left, ArithmeticNode *right, std::string op)
 {
-	ArithmeticNode<int> *node = new BinaryNode<int>(op, left, right);
+	ArithmeticNode *node = new BinaryNode(op, left, right);
 
 	// If there are no variables in the expression, we can evaluate it
 	if (node->type() == Type::CONST)
@@ -239,7 +247,7 @@ ArithmeticNode<int> *IRGenVisitor::binaryOp(ArithmeticNode<int> *left, Arithmeti
 		delete node;
 
 		// Return the value as a ConstNode
-		return (ArithmeticNode<int> *)new ConstNode<int>(value);
+		return (ArithmeticNode *)new ConstNode(value);
 	}
 
 	// Return the BinaryNode
@@ -255,7 +263,7 @@ antlrcpp::Any IRGenVisitor::visitLoopW(ifccParser::LoopWContext *ctx)
 	this->current_cfg()->add_bb(conditionBlock, true);
 	this->current_cfg()->current_bb = conditionBlock;
 
-	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode<int> *>();
+	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode *>();
 	node->generate(this->current_cfg(), cmp_name);
 
 	auto body = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
@@ -285,7 +293,7 @@ antlrcpp::Any IRGenVisitor::visitConditionnal(ifccParser::ConditionnalContext *c
 	this->current_cfg()->add_bb(conditionBlock, true);
 	this->current_cfg()->current_bb = conditionBlock;
 
-	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode<int> *>();
+	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode *>();
 	node->generate(this->current_cfg(), cmp_name);
 
 	auto thenB = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
@@ -313,14 +321,15 @@ antlrcpp::Any IRGenVisitor::visitConditionnal(ifccParser::ConditionnalContext *c
 
 	return nullptr;
 }
-bool IRGenVisitor::genCode(InstructionSet instructionSet) {
-	switch (instructionSet) 
+bool IRGenVisitor::genCode(InstructionSet instructionSet)
+{
+	switch (instructionSet)
 	{
 	case x86:
 		std::cout << ".globl	" << MAIN << "\n";
 		functions[0]->gen_asm(std::cout);
 		break;
-	
+
 	default:
 		break;
 	}
