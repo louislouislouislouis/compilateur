@@ -223,7 +223,7 @@ void IRInstr::gen_asm(ostream &o)
         bit("xor");
         break;
     case bnot:
-        bit("not");
+        o << "\tnotl\t " << dest << std::endl;
         break;
     default:
         break;
