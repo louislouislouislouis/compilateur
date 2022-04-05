@@ -146,7 +146,7 @@ void IRInstr::gen_asm(ostream &o)
         o << "	movzbl	%al, %eax\n";
 
         o << "	movl	%eax, " << dest << std::endl;
-        break;
+        break;  
     case ret:
         o << "\tmovl \t " << dest << ", %eax" << endl;
         break;

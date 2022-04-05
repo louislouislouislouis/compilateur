@@ -19,6 +19,13 @@ private:
 	}
 
 public:
+	// enum of instruction sets supported
+	typedef enum
+	{
+		x86,
+		arm
+	} InstructionSet;
+
 	IRGenVisitor(std::ostream &out = std::cout, std::ostream &err = std::cerr) : globalSymbolTable(out, err), functions(){};
 	virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;
 	virtual antlrcpp::Any visitSdecl(ifccParser::SdeclContext *ctx) override;
@@ -36,6 +43,7 @@ public:
 	virtual antlrcpp::Any visitRet(ifccParser::RetContext *ctx) override;
 	virtual antlrcpp::Any visitLoopW(ifccParser::LoopWContext *ctx) override;
 	virtual antlrcpp::Any visitConditionnal(ifccParser::ConditionnalContext *ctx) override;
+	bool genCode(InstructionSet instructionSet);
 
 	ArithmeticNode<int> *binaryOp(ArithmeticNode<int> *left, ArithmeticNode<int> *right, std::string op);
 	~IRGenVisitor()
