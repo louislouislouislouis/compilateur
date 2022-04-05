@@ -298,11 +298,6 @@ public:
 				"int");
 			this->left->generate(cfg, lName);
 		}
-		if (operation == IRInstr::Operation::shiftL || operation == IRInstr::Operation::shiftR) {
-			cerr<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<endl;
-			cerr<<dest<<" "<<lName<<" "<<rName<<endl;
-			cerr<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<endl;
-		}
 
 		cfg->current_bb->add_IRInstr(operation, {dest, lName, rName});
 		// std::cerr << "asmName: " << asmName << std::endl;
