@@ -44,6 +44,9 @@ int main(int argn, const char **argv)
 
   IRGenVisitor o = IRGenVisitor();
   o.visit(tree);
+  
+  
+  o.genCode(IRGenVisitor::InstructionSet::x86);
 
   // CodeGenVisitor v;
   // v.visit(tree);

@@ -12,8 +12,8 @@ antlrcpp::Any IRGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 
 	// Generate the body of the main function
 	visitChildren(ctx);
-	std::cout << ".globl	" << MAIN << "\n";
-	current_cfg()->gen_asm(std::cout);
+	// std::cout << ".globl	" << MAIN << "\n";
+	// current_cfg()->gen_asm(std::cout);
 	// Check for unused variables
 	current_cfg()->getST()->checkUse();
 
@@ -297,6 +297,19 @@ antlrcpp::Any IRGenVisitor::visitConditionnal(ifccParser::ConditionnalContext *c
 	this->current_cfg()->current_bb = next;
 
 	return nullptr;
+}
+bool IRGenVisitor::genCode(InstructionSet instructionSet) {
+	switch (instructionSet) 
+	{
+	case x86:
+		std::cout << ".globl	" << MAIN << "\n";
+		functions[0]->gen_asm(std::cout);
+		break;
+	
+	default:
+		break;
+	}
+	return true;
 }
 
 /*
