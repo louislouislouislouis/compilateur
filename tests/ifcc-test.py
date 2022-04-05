@@ -22,6 +22,14 @@ import shutil
 import sys
 import subprocess
 import pickle
+import cpuinfo
+
+macM1= False
+if cpuinfo.get_cpu_info().get("arch_string_raw") == "arm64":
+    macM1 = True
+
+
+print(macM1)
 
 
 def command(string, logfile=None):
@@ -188,10 +196,17 @@ for jobname in jobs:
     os.chdir(jobname)
 
     # Reference compiler = GCC
-    gccstatus = command("gcc -S -O0 -Wall -o asm-gcc.s input.c", "gcc-compile.txt")
+    if (macM1):
+        gccstatus = command("gcc -arch x86_64 -S -O0 -Wall -o asm-gcc.s input.c", "gcc-compile.txt")
+    else:
+        gccstatus = command("gcc -S -O0 -Wall -o asm-gcc.s input.c", "gcc-compile.txt")
+    
     if gccstatus == 0:
         # test-case is a valid program. we should run it
-        gccstatus = command("gcc -o exe-gcc asm-gcc.s", "gcc-link.txt")
+        if (macM1):
+            gccstatus = command("gcc -arch x86_64 -o exe-gcc asm-gcc.s", "gcc-link.txt")
+        else:
+            gccstatus = command("gcc -o exe-gcc asm-gcc.s", "gcc-link.txt")
     if gccstatus == 0:  # then both compile and link stage went well
         exegccstatus = command("./exe-gcc", "gcc-execute.txt")
         if args.verbose >= 2:
@@ -221,7 +236,10 @@ for jobname in jobs:
         continue
     else:
         # ifcc accepts to compile valid program -> let's link it
-        ldstatus = command("gcc -o exe-ifcc asm-ifcc.s", "ifcc-link.txt")
+        if macM1:
+            ldstatus = command("gcc -arch x86_64 -o exe-ifcc asm-ifcc.s", "ifcc-link.txt")
+        else:
+            ldstatus = command("gcc -o exe-ifcc asm-ifcc.s", "ifcc-link.txt")
         if ldstatus:
             print('TEST-CASE: '+jobname)
             print("TEST FAIL (your compiler produces incorrect assembly)")
