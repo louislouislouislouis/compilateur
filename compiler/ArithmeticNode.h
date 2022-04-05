@@ -253,6 +253,8 @@ public:
 			{"!=", IRInstr::Operation::neq},
 			{"<=", IRInstr::Operation::leq},
 			{">=", IRInstr::Operation::geq},
+			{"<<", IRInstr::Operation::shiftL},
+			{">>", IRInstr::Operation::shiftR},
 			{"&&", IRInstr::Operation::and_},
 			{"||", IRInstr::Operation::or_},
 			{"&", IRInstr::Operation::band},

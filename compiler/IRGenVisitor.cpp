@@ -199,6 +199,21 @@ antlrcpp::Any IRGenVisitor::visitComprel(ifccParser::ComprelContext *ctx)
 }
 
 /*
+Called when encountering a shift operator (<<, >>)
+*/
+antlrcpp::Any IRGenVisitor::visitShift(ifccParser::ShiftContext *ctx)
+{
+	// Parse the left hand side of the expression
+	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode<int> *>();
+
+	// Parse the right hand side of the expression
+	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode<int> *>();
+
+	// Return the BinaryNode
+	return binaryOp(left, right, ctx->op->getText());	
+}
+
+/*
 Called when encountering a logical operator (&&, ||)
 */
 antlrcpp::Any IRGenVisitor::visitOplog(ifccParser::OplogContext *ctx)

@@ -38,6 +38,8 @@ public:
 		leq,
 		gt,
 		geq,
+		shiftL,
+		shiftR,
 		and_,
 		or_,
 		band,

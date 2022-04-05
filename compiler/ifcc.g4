@@ -26,6 +26,7 @@ arithmetic:
 	| arithmetic op = ('+' | '-') arithmetic						# addminus
 	| arithmetic op = ('<=' | '>=' | '<' | '>') arithmetic			# comprel
 	| arithmetic op = ('==' | '!=') arithmetic						# compeq
+	| arithmetic op = ('<<' | '>>') arithmetic						# shift
 	| arithmetic op = ('&&' | '||') arithmetic						# oplog
 	| arithmetic op = ('&' | '^' | '|' | '<<' | '>>') arithmetic	# bitwise
 	| '(' arithmetic ')'											# par

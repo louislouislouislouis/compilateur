@@ -207,6 +207,18 @@ void IRInstr::gen_asm(ostream &o)
     case geq:
         comp("ge");
         break;
+    case shiftL:
+        o << "\tmovl \t" << left << ", %eax" <<endl;
+        o<< "\tmov \t" << right << ", %cl" <<endl;
+        o << "\t shl \t" << "%cl" << ", %eax" << endl;
+        o << "\tmovl \t%eax, " << dest << endl;
+        break;
+    case shiftR:
+        o << "\tmovl \t" << left << ", %eax" <<endl;
+        o<< "\tmov \t" << right << ", %cl" <<endl;
+        o << "\t shr \t" << "%cl" << ", %eax" << endl;
+        o << "\tmovl \t%eax, " << dest << endl;
+        break;    
     case and_:
         // TODO: implement
         break;
