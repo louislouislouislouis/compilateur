@@ -10,7 +10,6 @@ using namespace std;
 class IRGenVisitor : public ifccBaseVisitor
 {
 private:
-	vector<CFG *> functions;
 	SymbolTable globalSymbolTable;
 
 	CFG *current_cfg()
@@ -19,6 +18,7 @@ private:
 	}
 
 public:
+	vector<CFG *> functions;
 	// enum of instruction sets supported
 	typedef enum
 	{
@@ -44,27 +44,8 @@ public:
 	virtual antlrcpp::Any visitRet(ifccParser::RetContext *ctx) override;
 	virtual antlrcpp::Any visitLoopW(ifccParser::LoopWContext *ctx) override;
 	virtual antlrcpp::Any visitConditionnal(ifccParser::ConditionnalContext *ctx) override;
+	virtual antlrcpp::Any visitAssignChain(ifccParser::AssignChainContext *ctx) override;
 	bool genCode(InstructionSet instructionSet);
 
 	ArithmeticNode *binaryOp(ArithmeticNode *left, ArithmeticNode *right, std::string op);
-	~IRGenVisitor()
-	{
-		for (auto cfg : functions)
-		{
-			std::cerr << cfg->getName() << std::endl;
-			for (auto bb : *(cfg->getBbs()))
-			{
-				std::cerr << "	" << bb->label << std::endl;
-				for (auto inst : bb->instrs)
-				{
-					std::cerr << "		" << inst->getOp() << "	";
-					for (auto v : *(inst->get_params()))
-					{
-						std::cerr << v << "	";
-					}
-					std::cerr << std::endl;
-				}
-			}
-		}
-	}
 };

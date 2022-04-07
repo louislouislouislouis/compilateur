@@ -28,9 +28,9 @@ protected:
 	ArithmeticNode *left;
 	ArithmeticNode *right;
 	uint size;
-	long cast (long val) const
+	long cast(long val) const
 	{
-		//std::cout<<"size="<<size<<" val="<<val<<"\n";
+		// std::cout<<"size="<<size<<" val="<<val<<"\n";
 		if (size == 1)
 		{
 			return (char)val;
@@ -60,8 +60,9 @@ protected:
 	}
 
 public:
-	ArithmeticNode(ArithmeticNode *l, ArithmeticNode *r,uint sizeP) : left(l), right(r),size(sizeP){};
-	ArithmeticNode() : left(nullptr), right(nullptr),size(0){};
+	ArithmeticNode(ArithmeticNode *l, ArithmeticNode *r, uint sizeP = 8) : left(l), right(r), size(sizeP){};
+	ArithmeticNode() : left(nullptr), right(nullptr), size(8){};
+	ArithmeticNode(uint size) : left(nullptr), right(nullptr), size(size){};
 	~ArithmeticNode()
 	{
 		if (left != nullptr)
@@ -93,7 +94,7 @@ public:
 	 * @param dest the destination variable
 	 * @param o The output stream
 	 */
-	virtual void generate(CFG *cfg, std::string dest) const {};
+	virtual void generate(CFG *cfg, std::string dest){};
 };
 
 class ConstNode : public ArithmeticNode
@@ -104,12 +105,14 @@ private:
 
 public:
 	long eval() const override { return cast(value); }
-	void generate(CFG *cfg, std::string dest) const override
+	void generate(CFG *cfg, std::string dest) override
 	{
 
 		// std::string sDest = dest[0] == '%' ? dest : this->oftos(cfg->getST()->getOffset(dest, true));
 
 		// o << "	movl	$" << value << ", " << sDest << std::endl;
+		this->size = cfg->getST()->getSize(dest);
+		long value = cast(this->value);
 		cfg->current_bb->add_IRInstr(IRInstr::Operation::ldconst, std::vector<std::string>{dest, std::to_string(value)});
 	}
 	ConstNode(long v) : value(v){};
@@ -122,7 +125,7 @@ private:
 
 public:
 	Type type() const override { return Type::VAR; }
-	void generate(CFG *cfg, std::string dest) const override
+	void generate(CFG *cfg, std::string dest) override
 	{
 
 		// std::string sSrc = this->oftos(cfg->getST()->getOffset(name));
@@ -141,7 +144,7 @@ public:
 		// }
 	};
 	std::string getName() const { return name; };
-	VarNode(std::string n) : name(n){};
+	VarNode(std::string n, uint size) : name(n), ArithmeticNode(size){};
 };
 
 class UnaryNode : public ArithmeticNode
@@ -162,7 +165,7 @@ public:
 			return cast(~ArithmeticNode::left->eval());
 		return 0;
 	}
-	void generate(CFG *cfg, std::string dest) const override
+	void generate(CFG *cfg, std::string dest) override
 	{
 		// std::string sDest = dest[0] == '%' ? dest : this->oftos(cfg->getST()->getOffset(dest, true));
 
@@ -200,7 +203,7 @@ public:
 			std::cout << "Unary operator not supported" << std::endl;
 		}
 	}
-	UnaryNode(std::string op, ArithmeticNode *o) : ArithmeticNode(o, nullptr,size), op(op){};
+	UnaryNode(std::string op, ArithmeticNode *o) : ArithmeticNode(o, nullptr), op(op){};
 };
 
 class BinaryNode : public ArithmeticNode
@@ -249,7 +252,7 @@ public:
 		else
 			return 0;
 	}
-	void generate(CFG *cfg, std::string dest) const override
+	void generate(CFG *cfg, std::string dest) override
 	{
 
 		// std::string sDest = dest[0] == '%' ? dest : this->oftos(s->getOffset(dest, true));
@@ -371,5 +374,5 @@ public:
 		// }
 	}
 
-	BinaryNode(std::string o, ArithmeticNode *l, ArithmeticNode *r) : ArithmeticNode(l, r, size), op(o){};
+	BinaryNode(std::string o, ArithmeticNode *l, ArithmeticNode *r) : ArithmeticNode(l, r), op(o){};
 };

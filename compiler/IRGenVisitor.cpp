@@ -52,10 +52,38 @@ antlrcpp::Any IRGenVisitor::visitSassign(ifccParser::SassignContext *ctx)
 	// Parse the right hand side of the expression
 	auto root = visitChildren(ctx).as<ArithmeticNode *>();
 
+	auto op = ctx->OPASSIGN->getText();
+	ArithmeticNode *node = root;
+	if (op != "=")
+	{
+		node = new BinaryNode(op.substr(0, op.length() - 1), new VarNode(dname, current_cfg()->getST()->getSize(dname)), root);
+	}
+
 	// Generate the code for the right hand side
-	root->generate(current_cfg(), dname);
+	node->generate(current_cfg(), dname);
 
 	return nullptr;
+}
+
+antlrcpp::Any IRGenVisitor::visitAssignChain(ifccParser::AssignChainContext *ctx)
+{
+	// Get the name of the variable
+	std::string dname = ctx->ID()->getText();
+
+	// Parse the right hand side of the expression
+	auto root = visitChildren(ctx).as<ArithmeticNode *>();
+
+	auto op = ctx->OPASSIGN->getText();
+	ArithmeticNode *node = root;
+	if (op != "=")
+	{
+		node = new BinaryNode(op.substr(0, op.length() - 1), new VarNode(dname, current_cfg()->getST()->getSize(dname)), root);
+	}
+
+	// Generate the code for the right hand side
+	node->generate(current_cfg(), dname);
+	delete node;
+	return dynamic_cast<ArithmeticNode *>(new VarNode(dname, current_cfg()->getST()->getSize(dname)));
 }
 
 antlrcpp::Any IRGenVisitor::visitRet(ifccParser::RetContext *ctx)
@@ -105,7 +133,7 @@ antlrcpp::Any IRGenVisitor::visitId(ifccParser::IdContext *ctx)
 {
 	std::string name = ctx->ID()->getText();
 	current_cfg()->getST()->used(name);
-	ArithmeticNode *node = new VarNode(name);
+	ArithmeticNode *node = new VarNode(name, current_cfg()->getST()->getSize(name));
 
 	// Return the VarNode
 	return node;
@@ -212,13 +240,13 @@ Called when encountering a shift operator (<<, >>)
 antlrcpp::Any IRGenVisitor::visitShift(ifccParser::ShiftContext *ctx)
 {
 	// Parse the left hand side of the expression
-	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode<int> *>();
+	auto left = visit(ctx->arithmetic()[0]).as<ArithmeticNode *>();
 
 	// Parse the right hand side of the expression
-	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode<int> *>();
+	auto right = visit(ctx->arithmetic()[1]).as<ArithmeticNode *>();
 
 	// Return the BinaryNode
-	return binaryOp(left, right, ctx->op->getText());	
+	return binaryOp(left, right, ctx->op->getText());
 }
 
 /*
