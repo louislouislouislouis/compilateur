@@ -8,7 +8,6 @@
 #include "generated/ifccParser.h"
 #include "generated/ifccBaseVisitor.h"
 
-#include "CodeGenVisitor.h"
 #include "IRGenVisitor.h"
 #include "IR.h"
 
@@ -44,8 +43,25 @@ int main(int argn, const char **argv)
 
   IRGenVisitor o = IRGenVisitor();
   o.visit(tree);
-  
-  
+
+  for (auto cfg : o.functions)
+  {
+    std::cerr << cfg->getName() << std::endl;
+    for (auto bb : *(cfg->getBbs()))
+    {
+      std::cerr << "	" << bb->label << std::endl;
+      for (auto inst : bb->instrs)
+      {
+        std::cerr << "		" << inst->getOp() << "	";
+        for (auto v : *(inst->get_params()))
+        {
+          std::cerr << v << "	";
+        }
+        std::cerr << std::endl;
+      }
+    }
+  }
+
   o.genCode(IRGenVisitor::InstructionSet::x86);
 
   // CodeGenVisitor v;

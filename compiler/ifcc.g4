@@ -2,11 +2,12 @@ grammar ifcc;
 
 axiom: prog;
 
-prog: 'int' 'main' '(' ')' '{' expr+ '}';
+prog: 'int' 'main' '(' ')' '{' expr* '}';
 
 expr: (ret | decl | assign | inlineArithmetic)? ';'
 	| conditionnal
-	| loopW;
+	| loopW
+	| '{' expr* '}';
 
 ret: 'return' rval;
 
@@ -14,10 +15,25 @@ decl: type sdecl (',' sdecl)*;
 sdecl: ID ('=' rval)?;
 
 assign: sassign (',' sassign)*;
-sassign: ID '=' rval;
+
+sassign:
+	ID OPASSIGN = (
+		'='
+		| '+='
+		| '-='
+		| '*='
+		| '/='
+		| '%='
+		| '&='
+		| '|='
+		| '^='
+		| '<<='
+		| '>>='
+	) rval;
+
 rval: arithmetic;
 
-type: 'int';
+type: 'int' | 'char';
 
 inlineArithmetic: arithmetic;
 arithmetic:
@@ -30,8 +46,21 @@ arithmetic:
 	| arithmetic op = ('&&' | '||') arithmetic						# oplog
 	| arithmetic op = ('&' | '^' | '|' | '<<' | '>>') arithmetic	# bitwise
 	| '(' arithmetic ')'											# par
-	| CONST															# const
-	| ID															# id;
+	| ID OPASSIGN = (
+		'='
+		| '+='
+		| '-='
+		| '*='
+		| '/='
+		| '%='
+		| '&='
+		| '|='
+		| '^='
+		| '<<='
+		| '>>='
+	) arithmetic	# assignChain
+	| CONST			# const
+	| ID			# id;
 
 conditionnal:
 	'if' '(' inlineArithmetic ')' ifexpr ('else' elseexpr)?;
@@ -44,7 +73,7 @@ loopW: 'while' '(' inlineArithmetic ')' (expr | '{' expr+ '}');
 OPTOK: '--' | '++';
 RETURN: 'return';
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
-CONST: [0-9]+;
+CONST: [0-9]+ | '\'' .'\'';
 COMMENT: '/*' .*? '*/' -> skip;
 COMMENT_LINE: '//' .*? '\n' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
