@@ -23,6 +23,7 @@ public:
 	typedef enum
 	{
 		ldconst,
+		jmp,
 		copy,
 		add,
 		sub,

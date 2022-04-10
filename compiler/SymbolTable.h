@@ -52,6 +52,11 @@ public:
     // Check for unused variables
     void checkUse();
     uint getSize(std::string id);
+    bool exists(std::string id)
+    {
+        return offsetMap->count(id) != 0;
+    }
+
 private:
     // Offset of the declared variables
     std::map<std::string, size_t> *offsetMap;
@@ -65,7 +70,7 @@ private:
     // 2: used
     std::map<std::string, int> *usedMap;
     // Used to determine the size of a var
-    std::map<std::string,uint> *sizeMap;
+    std::map<std::string, uint> *sizeMap;
     // Offset of the last declared variable
     size_t offset;
 

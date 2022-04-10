@@ -67,8 +67,13 @@ void IRInstr::gen_asm(ostream &o)
         {2, 'w'},
         {1, 'b'},
         {8, 'q'}};
-    char suffix = typeSize[this->bb->cfg->getST()->getSize(this->params[0])];
-    std::string left = "", right = "", dest = "-" + this->bb->cfg->get_var_off(this->params[0]) + "(%rbp)";
+    char suffix = 0;
+    std::string left = "", right = "", dest = "";
+    if (op != IRInstr::jmp)
+    {
+        suffix = typeSize[this->bb->cfg->getST()->getSize(this->params[0])];
+        dest = "-" + this->bb->cfg->get_var_off(this->params[0]) + "(%rbp)";
+    }
     uint leftSize = 8, rightSize = 8;
     if (params.size() == 3)
     {
@@ -118,6 +123,11 @@ void IRInstr::gen_asm(ostream &o)
         // params[0] = var
         // params[1] = const
         o << "\tmov" << suffix << " \t$" << params[1] << ", " << dest << endl;
+        break;
+    case jmp:
+        // C: goto label
+        // params[0] = label
+        o << "\tjmp " << params[0] << std::endl;
         break;
     case copy:
         // C: var1 = var2
@@ -229,17 +239,21 @@ void IRInstr::gen_asm(ostream &o)
         comp("ge");
         break;
     case shiftL:
-        o << "\tmovl \t" << left << ", %eax" <<endl;
-        o<< "\tmov \t" << right << ", %cl" <<endl;
-        o << "\t shl \t" << "%cl" << ", %eax" << endl;
+        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\tmov \t" << right << ", %cl" << endl;
+        o << "\t shl \t"
+          << "%cl"
+          << ", %eax" << endl;
         o << "\tmovl \t%eax, " << dest << endl;
         break;
     case shiftR:
-        o << "\tmovl \t" << left << ", %eax" <<endl;
-        o<< "\tmov \t" << right << ", %cl" <<endl;
-        o << "\t shr \t" << "%cl" << ", %eax" << endl;
+        o << "\tmovl \t" << left << ", %eax" << endl;
+        o << "\tmov \t" << right << ", %cl" << endl;
+        o << "\t shr \t"
+          << "%cl"
+          << ", %eax" << endl;
         o << "\tmovl \t%eax, " << dest << endl;
-        break;    
+        break;
     case and_:
         // TODO: implement
         break;

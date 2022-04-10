@@ -90,7 +90,8 @@ antlrcpp::Any IRGenVisitor::visitRet(ifccParser::RetContext *ctx)
 {
 	// Parse the return value
 	auto node = visitChildren(ctx).as<ArithmeticNode *>();
-	current_cfg()->getST()->addTemp("rvar", "int", {ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()});
+	if (!current_cfg()->getST()->exists("rvar"))
+		current_cfg()->getST()->addTemp("rvar", "int", {ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()});
 	node->generate(current_cfg(), "rvar");
 	current_cfg()->current_bb->add_IRInstr(IRInstr::Operation::ret, "rvar");
 
@@ -284,6 +285,7 @@ ArithmeticNode *IRGenVisitor::binaryOp(ArithmeticNode *left, ArithmeticNode *rig
 
 antlrcpp::Any IRGenVisitor::visitLoopW(ifccParser::LoopWContext *ctx)
 {
+	in_loop = true;
 	std::string cmp_name = "*" + std::to_string(this->current_cfg()->getBbs()->size());
 	this->current_cfg()->getST()->addTemp(cmp_name, "int");
 	auto conditionBlock = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name(), cmp_name);
@@ -301,36 +303,45 @@ antlrcpp::Any IRGenVisitor::visitLoopW(ifccParser::LoopWContext *ctx)
 	this->current_cfg()->add_bb(next, false);
 
 	this->current_cfg()->current_bb = body;
+	loop_cond = conditionBlock;
+	loop_next = next;
+	body->exit_true = conditionBlock;
 	for (auto expr : ctx->expr())
 	{
 		visit(expr);
 	}
-	body->exit_true = conditionBlock;
-	this->current_cfg()->current_bb = next;
 
+	this->current_cfg()->current_bb = next;
+	in_loop = false;
 	return nullptr;
 }
 
 antlrcpp::Any IRGenVisitor::visitConditionnal(ifccParser::ConditionnalContext *ctx)
 {
 
+	auto initial = this->current_cfg()->current_bb->exit_true;
+	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode *>();
+
 	std::string cmp_name = "*" + std::to_string(this->current_cfg()->getBbs()->size());
 	this->current_cfg()->getST()->addTemp(cmp_name, "int");
+
 	auto conditionBlock = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name(), cmp_name);
+	auto thenB = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+	BasicBlock *elseB;
+	auto next = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+
+	conditionBlock->exit_false = next;
 
 	this->current_cfg()->add_bb(conditionBlock, true);
 	this->current_cfg()->current_bb = conditionBlock;
-
-	auto node = visit(ctx->inlineArithmetic()).as<ArithmeticNode *>();
 	node->generate(this->current_cfg(), cmp_name);
 
-	auto thenB = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
 	this->current_cfg()->add_bb(thenB, true);
 
-	BasicBlock *elseB;
 	if (ctx->elseexpr() != nullptr)
 	{
 		elseB = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
+		elseB->exit_true = next;
 		this->current_cfg()->add_bb(elseB, false);
 		this->current_cfg()->current_bb = elseB;
 		visit(ctx->elseexpr());
@@ -339,12 +350,9 @@ antlrcpp::Any IRGenVisitor::visitConditionnal(ifccParser::ConditionnalContext *c
 	this->current_cfg()->current_bb = thenB;
 	visit(ctx->ifexpr());
 
-	auto next = new BasicBlock(this->current_cfg(), this->current_cfg()->new_BB_name());
 	this->current_cfg()->add_bb(next, true);
-	if (ctx->elseexpr() != nullptr)
-		elseB->exit_true = next;
-	else
-		conditionBlock->exit_false = next;
+
+	next->exit_true = initial;
 	this->current_cfg()->current_bb = next;
 
 	return nullptr;
@@ -364,6 +372,26 @@ bool IRGenVisitor::genCode(InstructionSet instructionSet)
 	return true;
 }
 
+antlrcpp::Any IRGenVisitor::visitLoopCtrl(ifccParser::LoopCtrlContext *ctx)
+{
+	if (!in_loop)
+	{
+
+		std::cerr << "Error: loop control outside loop" << std::endl;
+		exit(1);
+	}
+
+	auto keyWord = ctx->keyW->getText();
+	if (keyWord == "break")
+	{
+		this->current_cfg()->current_bb->add_IRInstr(IRInstr::jmp, loop_next->label);
+	}
+	else
+	{
+		this->current_cfg()->current_bb->add_IRInstr(IRInstr::jmp, loop_cond->label);
+	}
+	return nullptr;
+}
 /*
 visit(conditionnal)
 	add true

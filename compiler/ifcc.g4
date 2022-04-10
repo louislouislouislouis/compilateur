@@ -7,6 +7,7 @@ prog: 'int' 'main' '(' ')' '{' expr* '}';
 expr: (ret | decl | assign | inlineArithmetic)? ';'
 	| conditionnal
 	| loopW
+	| loopCtrl
 	| '{' expr* '}';
 
 ret: 'return' rval;
@@ -68,7 +69,9 @@ conditionnal:
 ifexpr: expr | '{' expr+ '}';
 elseexpr: conditionnal | expr | '{' expr+ '}';
 
-loopW: 'while' '(' inlineArithmetic ')' (expr | '{' expr+ '}');
+loopW:
+	'while' '(' inlineArithmetic ')' (expr | '{' (expr)+ '}');
+loopCtrl: keyW = ('break' | 'continue') ';';
 
 OPTOK: '--' | '++';
 RETURN: 'return';

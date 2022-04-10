@@ -25,6 +25,9 @@ public:
 		x86,
 		arm
 	} InstructionSet;
+	bool in_loop = false;
+	BasicBlock *loop_cond = nullptr;
+	BasicBlock *loop_next = nullptr;
 
 	IRGenVisitor(std::ostream &out = std::cout, std::ostream &err = std::cerr) : globalSymbolTable(out, err), functions(){};
 	virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;
@@ -45,6 +48,7 @@ public:
 	virtual antlrcpp::Any visitLoopW(ifccParser::LoopWContext *ctx) override;
 	virtual antlrcpp::Any visitConditionnal(ifccParser::ConditionnalContext *ctx) override;
 	virtual antlrcpp::Any visitAssignChain(ifccParser::AssignChainContext *ctx) override;
+	virtual antlrcpp::Any visitLoopCtrl(ifccParser::LoopCtrlContext *ctx) override;
 	bool genCode(InstructionSet instructionSet);
 
 	ArithmeticNode *binaryOp(ArithmeticNode *left, ArithmeticNode *right, std::string op);

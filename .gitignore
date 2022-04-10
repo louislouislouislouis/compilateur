@@ -7,7 +7,5 @@ compiler/ifcc
 compiler/generated
 tests/ifcc-test-output
 compiler/.antlr
-.vscode/
-runmake_fedora.sh
 compiler/runmake_ubuntu.sh
 
