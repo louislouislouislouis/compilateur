@@ -2,15 +2,7 @@
 
 ## Instructions
 
-This minimal example shows how to build a basic C compiler using
-Antlr4 for C++. The only file the compiler can deal with is:
-
-```
-int main() {
-   return N;
-}
-```
-where `N` is a positive integer constant. 
+To compile the project use the make file.
 
 ## Source Files
 - `ifcc.g4` contains the grammar in antlr4 format

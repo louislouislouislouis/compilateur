@@ -44,33 +44,6 @@ int main(int argn, const char **argv)
   IRGenVisitor o = IRGenVisitor();
   o.visit(tree);
 
-  for (auto cfg : o.functions)
-  {
-    std::cerr << cfg->getName() << std::endl;
-    for (auto bb : *(cfg->getBbs()))
-    {
-      std::cerr << "	" << bb->label;
-      if (bb->exit_true != nullptr)
-      {
-        std::cerr << "  : t " << bb->exit_true->label;
-      }
-      if (bb->exit_false != nullptr)
-      {
-        std::cerr << ",	f " << bb->exit_false->label;
-      }
-      std::cerr << std::endl;
-      for (auto inst : bb->instrs)
-      {
-        std::cerr << "		" << inst->getOp() << "	";
-        for (auto v : *(inst->get_params()))
-        {
-          std::cerr << v << "	";
-        }
-        std::cerr << std::endl;
-      }
-    }
-  }
-
   o.genCode(IRGenVisitor::InstructionSet::x86);
 
   // CodeGenVisitor v;
